@@ -1,0 +1,21 @@
+BACKEND_LARAVEL/app/
+├── Domain/                   # Logique métier découpée par domaine
+│   ├── Auth/
+│   ├── Customers/
+│   ├── Orders/
+│   ├── Files/
+│   ├── Production/
+│   ├── Inventory/
+│   ├── Finance/
+│   └── Hr/
+│       ├── Services/         # Orchestration des règles métier complexes
+│       ├── Actions/          # Actions atomiques réutilisables (ex: ValidateOrderAction)
+│       └── DTO/              # Objets de transfert de données typés
+├── Http/
+│   ├── Controllers/Api/V1/   # Contrôleurs fins (délèguent aux Services)
+│   ├── Requests/V1/          # Form Requests pour validation stricte des entrées
+│   └── Resources/V1/         # JSON Resources pour standardiser les réponses API
+├── Models/                   # Modèles Eloquent avec typage et relations strictes
+├── Policies/                 # Règles d'autorisation exécutées côté serveur
+├── Jobs/                     # Tâches asynchrones (analyse de fichiers, aperçus, etc.)
+└── Support/                  # Réponse API uniforme, logs d'audit, gestion d'erreurs
