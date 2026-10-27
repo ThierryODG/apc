@@ -36,7 +36,7 @@ class Customer extends Model
     protected $casts = [
         'credit_limit' => 'decimal:2',
         'payment_days' => 'integer',
-        'is_active'    => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     // ─── Relations ───────────────────────────────────────────────────────────
@@ -56,11 +56,16 @@ class Customer extends Model
         return $this->hasMany(CustomerAddress::class);
     }
 
+    public function inquiries(): HasMany
+    {
+        return $this->hasMany(Inquiry::class);
+    }
+
     public function defaultDeliveryAddress(): HasMany
     {
         return $this->hasMany(CustomerAddress::class)
-                    ->whereIn('type', ['delivery', 'both'])
-                    ->where('is_default', true);
+            ->whereIn('type', ['delivery', 'both'])
+            ->where('is_default', true);
     }
 
     public function createdBy(): BelongsTo
@@ -97,11 +102,11 @@ class Customer extends Model
     {
         return $query->where(function ($q) use ($term) {
             $q->where('name', 'ilike', "%{$term}%")
-              ->orWhere('trade_name', 'ilike', "%{$term}%")
-              ->orWhere('email', 'ilike', "%{$term}%")
-              ->orWhere('phone', 'like', "%{$term}%")
-              ->orWhere('phone_2', 'like', "%{$term}%")
-              ->orWhere('aronium_id', 'like', "%{$term}%");
+                ->orWhere('trade_name', 'ilike', "%{$term}%")
+                ->orWhere('email', 'ilike', "%{$term}%")
+                ->orWhere('phone', 'like', "%{$term}%")
+                ->orWhere('phone_2', 'like', "%{$term}%")
+                ->orWhere('aronium_id', 'like', "%{$term}%");
         });
     }
 
