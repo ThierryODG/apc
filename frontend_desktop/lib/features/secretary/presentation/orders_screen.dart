@@ -26,9 +26,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiClient().get(ApiEndpoints.secretaryOrders);
-      final List data = res['data'] ?? res['orders'] ?? [];
+      final list = ApiClient.extractList(res, 'orders');
       setState(() {
-        _orders = data.cast<Map<String, dynamic>>();
+        _orders = list.cast<Map<String, dynamic>>();
         _loading = false;
       });
     } catch (e) {

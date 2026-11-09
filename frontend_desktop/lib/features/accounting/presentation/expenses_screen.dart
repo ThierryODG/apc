@@ -21,8 +21,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiClient().get(ApiEndpoints.accountingExpenses);
-      final List data = res['data'] ?? res['expenses'] ?? [];
-      setState(() { _expenses = data.cast<Map<String, dynamic>>(); _loading = false; });
+      final list = ApiClient.extractList(res, 'expenses');
+      setState(() { _expenses = list.cast<Map<String, dynamic>>(); _loading = false; });
     } catch (e) { setState(() { _error = e.toString(); _loading = false; }); }
   }
 

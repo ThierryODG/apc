@@ -1,3 +1,3 @@
 Dernier intervenant : Antigravity (Gemini 3.8 Flash) | IDE : Antigravity | Dossier : ANTIGRAVITY
-Dernière intervention : 2026-11-09 11:27 +00:00 | Frontend Flutter Desktop complet implémenté (POS Aronium, Secrétariat, Comptabilité, Admin) selon v.html. 0 erreur statique, tests widgets validés avec succès.
-Reprise : Frontend Flutter Desktop et Backend Laravel 11 opérationnels. | Prochaine action : Commit Git et lancement / démonstration de l'application.
+Dernière intervention : 2026-11-09 12:27 +00:00 | Intégration du logo officiel, refonte moderne sans emojis, support des dimensions en m², remises personnalisées, défilement responsive anti-overflow et correction des listes API.
+Reprise : Frontend Flutter Desktop et Backend Laravel 11 opérationnels. | Prochaine action : Validation utilisateur en direct.

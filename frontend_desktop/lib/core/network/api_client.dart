@@ -86,6 +86,39 @@ class ApiClient {
     }
   }
 
+  /// Extraction robuste d'une liste à partir d'une réponse API ou d'un paginator Laravel
+  /// Gère les cas : List directe, {'data': [...]}, {'nom_cle': {'data': [...]}}, ou {'nom_cle': [...]}
+  static List<dynamic> extractList(dynamic response, [String? preferredKey]) {
+    if (response == null) return [];
+    if (response is List) return response;
+
+    if (response is Map<String, dynamic>) {
+      // 1. Si une clé spécifique a été demandée
+      if (preferredKey != null && response.containsKey(preferredKey)) {
+        final val = response[preferredKey];
+        if (val is List) return val;
+        if (val is Map<String, dynamic> && val['data'] is List) {
+          return val['data'] as List;
+        }
+      }
+
+      // 2. Format standard Laravel pagination direct : {'data': [...]}
+      if (response['data'] is List) {
+        return response['data'] as List;
+      }
+
+      // 3. Chercher dans les clés connues courantes
+      for (final k in ['customers', 'orders', 'expenses', 'cash_flows', 'payments', 'users', 'inquiries', 'products', 'fiscal_years']) {
+        if (response[k] is List) return response[k] as List;
+        if (response[k] is Map<String, dynamic> && response[k]['data'] is List) {
+          return response[k]['data'] as List;
+        }
+      }
+    }
+
+    return [];
+  }
+
   Map<String, dynamic> _handleResponse(http.Response response) {
     dynamic data;
     try {
@@ -101,12 +134,20 @@ class ApiClient {
       return {'data': data};
     }
 
-    final message = (data is Map && data['message'] != null)
-        ? data['message'].toString()
-        : 'Erreur HTTP ${response.statusCode}';
-    final errors = (data is Map && data['errors'] != null) ? data['errors'] : null;
+    String message = 'Erreur HTTP ${response.statusCode}';
+    if (data is Map) {
+      if (data['message'] != null) {
+        message = data['message'].toString();
+      }
+      if (data['errors'] != null && data['errors'] is Map) {
+        final errorMap = data['errors'] as Map;
+        final details = errorMap.values.expand((e) => e is List ? e : [e]).join('\n');
+        if (details.isNotEmpty) {
+          message = '$message\n$details';
+        }
+      }
+    }
 
-    throw ApiException(message, statusCode: response.statusCode, errors: errors);
+    throw ApiException(message, statusCode: response.statusCode, errors: data is Map ? data['errors'] : null);
   }
 }
-

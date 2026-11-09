@@ -19,8 +19,8 @@ class _UsersScreenState extends State<UsersScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiClient().get(ApiEndpoints.adminUsers);
-      final List data = res['data'] ?? res['users'] ?? [];
-      setState(() { _users = data.cast<Map<String, dynamic>>(); _loading = false; });
+      final list = ApiClient.extractList(res, 'users');
+      setState(() { _users = list.cast<Map<String, dynamic>>(); _loading = false; });
     } catch (e) { setState(() { _error = e.toString(); _loading = false; }); }
   }
 
@@ -111,12 +111,27 @@ class _CreateUserDialogState extends State<_CreateUserDialog> {
   bool _loading = false; String? _error;
 
   Future<void> _submit() async {
-    if (_nameCtrl.text.trim().isEmpty || _emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) { setState(() => _error = 'Nom, email et mot de passe sont requis.'); return; }
+    if (_nameCtrl.text.trim().isEmpty || _emailCtrl.text.trim().isEmpty || _passCtrl.text.isEmpty) {
+      setState(() => _error = 'Nom, email et mot de passe sont requis.');
+      return;
+    }
+    if (_passCtrl.text.length < 6) {
+      setState(() => _error = 'Le mot de passe doit comporter au moins 6 caractères.');
+      return;
+    }
     setState(() { _loading = true; _error = null; });
     try {
-      await ApiClient().post(ApiEndpoints.adminUsers, { 'name': _nameCtrl.text.trim(), 'email': _emailCtrl.text.trim(), 'password': _passCtrl.text, 'role': _role });
+      await ApiClient().post(ApiEndpoints.adminUsers, {
+        'name': _nameCtrl.text.trim(),
+        'email': _emailCtrl.text.trim(),
+        'password': _passCtrl.text,
+        'role': _role,
+        'is_active': true,
+      });
       if (mounted) Navigator.pop(context, true);
-    } catch (e) { setState(() { _error = e.toString(); _loading = false; }); }
+    } catch (e) {
+      setState(() { _error = e.toString(); _loading = false; });
+    }
   }
 
   @override

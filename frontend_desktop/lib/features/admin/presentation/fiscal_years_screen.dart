@@ -19,8 +19,8 @@ class _FiscalYearsScreenState extends State<FiscalYearsScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiClient().get(ApiEndpoints.adminFiscalYears);
-      final List data = res['data'] ?? res['fiscal_years'] ?? [];
-      setState(() { _years = data.cast<Map<String, dynamic>>(); _loading = false; });
+      final list = ApiClient.extractList(res, 'fiscal_years');
+      setState(() { _years = list.cast<Map<String, dynamic>>(); _loading = false; });
     } catch (e) { setState(() { _error = e.toString(); _loading = false; }); }
   }
 

@@ -37,9 +37,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
   Future<void> _load() async {
     try {
       final res = await ApiClient().get(ApiEndpoints.secretaryCustomers);
-      final List data = res['data'] ?? res['customers'] ?? [];
+      final list = ApiClient.extractList(res, 'customers');
       setState(() {
-        _customers = data.map((c) => Customer.fromJson(c)).toList();
+        _customers = list.map((c) => Customer.fromJson(c as Map<String, dynamic>)).toList();
         _filtered = List.from(_customers);
         _loading = false;
       });

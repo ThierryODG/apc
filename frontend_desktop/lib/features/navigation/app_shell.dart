@@ -87,14 +87,33 @@ class _AppShellState extends State<AppShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Row(
-        children: [
-          AppSidebar(
-            selectedRoute: _currentRoute,
-            onRouteChanged: (route) => setState(() => _currentRoute = route),
-          ),
-          Expanded(child: _buildContent()),
-        ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final content = Row(
+            children: [
+              AppSidebar(
+                selectedRoute: _currentRoute,
+                onRouteChanged: (route) => setState(() => _currentRoute = route),
+              ),
+              Expanded(child: _buildContent()),
+            ],
+          );
+
+          // Si la fenêtre est réduite en-dessous de 1080px de large, on offre un défilement horizontal fluide
+          // évitant tout overflow jaune/noir désagréable
+          if (constraints.maxWidth < 1080) {
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: 1080,
+                height: constraints.maxHeight,
+                child: content,
+              ),
+            );
+          }
+
+          return content;
+        },
       ),
     );
   }

@@ -25,10 +25,64 @@ class _DailyRegisterScreenState extends State<DailyRegisterScreen> {
   }
 
   Future<void> _openRegister() async {
+    final amountCtrl = TextEditingController(text: '0');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_open_rounded, color: AppColors.vert, size: 20),
+            SizedBox(width: 8),
+            Text('Ouverture de caisse', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Indiquez le fond de caisse initial en espèces pour aujourd\'hui :',
+              style: TextStyle(fontSize: 12, color: AppColors.gris),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: amountCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              decoration: const InputDecoration(
+                labelText: 'Fond de caisse initial',
+                suffixText: 'FCFA',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.vert),
+            child: const Text('Ouvrir la session'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
     setState(() => _actionLoading = true);
     try {
-      await ApiClient().post(ApiEndpoints.dailyRegisterOpen, {});
+      final initialBalance = double.tryParse(amountCtrl.text.replaceAll(',', '.').trim()) ?? 0.0;
+      await ApiClient().post(ApiEndpoints.dailyRegisterOpen, {
+        'opening_balance': initialBalance,
+      });
       await _load();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Session de caisse ouverte avec succès.'), backgroundColor: AppColors.vert),
+        );
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.rouge));
     } finally { setState(() => _actionLoading = false); }

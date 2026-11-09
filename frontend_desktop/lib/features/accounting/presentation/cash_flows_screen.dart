@@ -26,9 +26,9 @@ class _CashFlowsScreenState extends State<CashFlowsScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiClient().get(ApiEndpoints.accountingCashFlows);
-      final List data = res['data'] ?? res['cash_flows'] ?? [];
+      final list = ApiClient.extractList(res, 'cash_flows');
       setState(() {
-        _flows = data.cast<Map<String, dynamic>>();
+        _flows = list.cast<Map<String, dynamic>>();
         _loading = false;
       });
     } catch (e) {

@@ -24,9 +24,9 @@ class _InquiriesScreenState extends State<InquiriesScreen> {
   Future<void> _load() async {
     try {
       final res = await ApiClient().get(ApiEndpoints.secretaryInquiries);
-      final List data = res['data'] ?? res['inquiries'] ?? [];
+      final list = ApiClient.extractList(res, 'inquiries');
       setState(() {
-        _inquiries = data.cast<Map<String, dynamic>>();
+        _inquiries = list.cast<Map<String, dynamic>>();
         _loading = false;
       });
     } catch (e) {

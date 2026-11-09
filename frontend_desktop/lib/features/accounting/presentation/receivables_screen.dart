@@ -19,8 +19,8 @@ class _ReceivablesScreenState extends State<ReceivablesScreen> {
     setState(() { _loading = true; _error = null; });
     try {
       final res = await ApiClient().get(ApiEndpoints.accountingReceivables);
-      final List data = res['data'] ?? res['receivables'] ?? [];
-      setState(() { _items = data.cast<Map<String, dynamic>>(); _loading = false; });
+      final list = ApiClient.extractList(res, 'receivables');
+      setState(() { _items = list.cast<Map<String, dynamic>>(); _loading = false; });
     } catch (e) { setState(() { _error = e.toString(); _loading = false; }); }
   }
 

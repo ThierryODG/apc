@@ -31,7 +31,8 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
   // ── Ticket ───────────────────────────────────────────────
   final List<TicketLine> _lines = [];
   Customer? _selectedCustomer;
-  double _discountPercent = 0;
+  double _discountAmount = 0;
+  bool _isPercentageDiscount = false;
 
   // ── KPI ──────────────────────────────────────────────────
   int _ventesCount = 0;
@@ -101,13 +102,14 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     setState(() {
       final idx = _lines.indexWhere((l) => l.productId == product.id);
       if (idx >= 0) {
-        _lines[idx].qty++;
+        _lines[idx].quantity += 1.0;
       } else {
         _lines.add(TicketLine(
           productId: product.id,
           productName: product.name,
           unit: product.unit,
           unitPrice: product.unitPrice,
+          quantity: 1.0,
         ));
       }
     });
@@ -117,22 +119,22 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     setState(() => _lines.removeAt(index));
   }
 
-  void _updateQty(int index, int qty) {
-    setState(() => _lines[index].qty = qty);
+  void _updateQuantity(int index, double qty) {
+    setState(() => _lines[index].quantity = qty);
   }
 
   void _cancelTicket() {
     setState(() {
       _lines.clear();
       _selectedCustomer = null;
-      _discountPercent = 0;
+      _discountAmount = 0;
+      _isPercentageDiscount = false;
     });
   }
 
   void _holdTicket() {
-    // TODO: sauvegarder en mémoire pour reprise
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ticket mis en attente.'), backgroundColor: AppColors.gris),
+      const SnackBar(content: Text('Ticket mis en attente.'), backgroundColor: AppColors.bleu),
     );
   }
 
@@ -140,8 +142,11 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     if (_lines.isEmpty) return;
 
     final subTotal = _lines.fold<double>(0, (s, l) => s + l.lineTotal);
-    final discount = subTotal * _discountPercent / 100;
-    final total = subTotal - discount;
+    double discountCalculated = _discountAmount;
+    if (_isPercentageDiscount) {
+      discountCalculated = subTotal * (_discountAmount / 100);
+    }
+    final total = (subTotal - discountCalculated) < 0 ? 0.0 : (subTotal - discountCalculated);
 
     showDialog(
       context: context,
@@ -150,7 +155,7 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
         total: total,
         customer: _selectedCustomer,
         lines: _lines,
-        discountPercent: _discountPercent,
+        discountCalculated: discountCalculated,
         onConfirm: (paymentMethod, amountReceived) => _confirmPayment(paymentMethod, amountReceived, total),
       ),
     );
@@ -160,13 +165,14 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     try {
       final orderLines = _lines.map((l) => {
         'product_id': l.productId,
-        'quantity': l.qty,
+        'quantity': l.quantity,
         'unit_price': l.unitPrice,
       }).toList();
 
       final body = {
         'customer_id': _selectedCustomer?.id,
-        'discount_percent': _discountPercent,
+        'discount_amount': _discountAmount,
+        'is_percentage_discount': _isPercentageDiscount,
         'payment_method': method,
         'amount_received': amountReceived,
         'items': orderLines,
@@ -176,20 +182,20 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
       await ApiClient().post(ApiEndpoints.secretaryOrders, body);
 
       if (!mounted) return;
-      Navigator.pop(context); // ferme checkout dialog
+      Navigator.pop(context);
 
-      // Mise à jour KPI
       setState(() {
         _ventesCount++;
         _caDuJour += total;
         _lines.clear();
         _selectedCustomer = null;
-        _discountPercent = 0;
+        _discountAmount = 0;
+        _isPercentageDiscount = false;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Vente enregistrée avec succès !'),
+          content: Text('Vente enregistrée avec succès.'),
           backgroundColor: AppColors.vert,
           duration: Duration(seconds: 3),
         ),
@@ -223,7 +229,7 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
       },
       child: Column(
         children: [
-          // Topbar
+          // Topbar avec recherche
           PosTopbar(
             searchController: _searchCtrl,
             onSearchChanged: (q) {
@@ -231,7 +237,7 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
               setState(() {
                 _filteredProducts = _allProducts.where((p) =>
                   p.name.toLowerCase().contains(query) ||
-                  (p.code?.toLowerCase().contains(query) ?? false)
+                  (p.code.toLowerCase().contains(query))
                 ).toList();
               });
             },
@@ -249,7 +255,7 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
                           // Catalogue produits (flex)
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(12),
                               child: ProductCatalogPanel(
                                 categories: _categories,
                                 products: _filteredProducts,
@@ -259,18 +265,24 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
                               ),
                             ),
                           ),
-                          // Ticket en cours (fixe 350px)
+                          // Ticket en cours (fixe 380px)
                           LiveTicketPanel(
                             lines: _lines,
                             selectedCustomer: _selectedCustomer,
-                            discountPercent: _discountPercent,
+                            discountAmount: _discountAmount,
+                            isPercentageDiscount: _isPercentageDiscount,
                             onCancel: _cancelTicket,
                             onHold: _holdTicket,
                             onCheckout: _openCheckout,
                             onSelectCustomer: _openSelectCustomer,
                             onRemoveLine: _removeLine,
-                            onUpdateQty: _updateQty,
-                            onDiscountChanged: (p) => setState(() => _discountPercent = p),
+                            onUpdateQuantity: _updateQuantity,
+                            onDiscountChanged: (amt, isPct) {
+                              setState(() {
+                                _discountAmount = amt;
+                                _isPercentageDiscount = isPct;
+                              });
+                            },
                           ),
                         ],
                       ),
@@ -298,14 +310,14 @@ class _CheckoutDialog extends StatefulWidget {
   final double total;
   final Customer? customer;
   final List<TicketLine> lines;
-  final double discountPercent;
+  final double discountCalculated;
   final Function(String method, double amountReceived) onConfirm;
 
   const _CheckoutDialog({
     required this.total,
     required this.customer,
     required this.lines,
-    required this.discountPercent,
+    required this.discountCalculated,
     required this.onConfirm,
   });
 
@@ -339,7 +351,7 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: SizedBox(
-        width: 420,
+        width: 440,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -352,16 +364,16 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.credit_card_rounded, color: Colors.white, size: 18),
-                  const SizedBox(width: 8),
+                  const Icon(Icons.payments_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
                   const Text(
-                    'ENCAISSEMENT',
+                    'ENCAISSEMENT VENTE',
                     style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
                   ),
                   const Spacer(),
                   Text(
                     _fmt(widget.total),
-                    style: const TextStyle(color: AppColors.orange, fontSize: 16, fontWeight: FontWeight.w900),
+                    style: const TextStyle(color: AppColors.orange, fontSize: 18, fontWeight: FontWeight.w900),
                   ),
                 ],
               ),
@@ -375,32 +387,35 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                   // Résumé
                   if (widget.customer != null)
                     Text('Client : ${widget.customer!.name}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.gris)),
-                  Text('${widget.lines.length} article(s) — Remise ${widget.discountPercent.toInt()}%',
+                        style: const TextStyle(fontSize: 12, color: AppColors.texte, fontWeight: FontWeight.w700)),
+                  Text('${widget.lines.length} article(s) / dimension(s) saisis',
                       style: const TextStyle(fontSize: 12, color: AppColors.gris)),
-                  const SizedBox(height: 20),
+                  if (widget.discountCalculated > 0)
+                    Text('Remise déduite : ${_fmt(widget.discountCalculated)}',
+                        style: const TextStyle(fontSize: 12, color: AppColors.rouge, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 18),
 
                   // Mode de paiement
-                  const Text('Mode de paiement :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                  const Text('Mode de règlement :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.bleu)),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: [
-                      _PayMethodChip(label: '💵 Espèces', value: 'cash', selected: _method == 'cash',
+                      _PayMethodChip(label: 'Espèces', icon: Icons.money_rounded, value: 'cash', selected: _method == 'cash',
                           onTap: () => setState(() => _method = 'cash')),
-                      _PayMethodChip(label: '📱 Mobile Money', value: 'mobile_money', selected: _method == 'mobile_money',
+                      _PayMethodChip(label: 'Mobile Money', icon: Icons.phone_android_rounded, value: 'mobile_money', selected: _method == 'mobile_money',
                           onTap: () => setState(() => _method = 'mobile_money')),
-                      _PayMethodChip(label: '🏦 Virement', value: 'bank_transfer', selected: _method == 'bank_transfer',
+                      _PayMethodChip(label: 'Virement', icon: Icons.account_balance_rounded, value: 'bank_transfer', selected: _method == 'bank_transfer',
                           onTap: () => setState(() => _method = 'bank_transfer')),
-                      _PayMethodChip(label: '📄 Chèque', value: 'check', selected: _method == 'check',
+                      _PayMethodChip(label: 'Chèque', icon: Icons.description_outlined, value: 'check', selected: _method == 'check',
                           onTap: () => setState(() => _method = 'check')),
                     ],
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
                   // Montant reçu
                   if (_method == 'cash') ...[
-                    const Text('Montant reçu (FCFA) :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                    const Text('Montant reçu du client (FCFA) :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.bleu)),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _amountCtrl,
@@ -415,7 +430,7 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                     const SizedBox(height: 12),
                     if (_amountReceived >= widget.total)
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.vert.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -434,7 +449,7 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                       )
                     else
                       Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: AppColors.rouge.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
@@ -443,7 +458,7 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Reste dû :', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.rouge)),
+                            const Text('Reste dû (Créance) :', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.rouge)),
                             Text(
                               _fmt(widget.total - _amountReceived),
                               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.rouge),
@@ -487,8 +502,8 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                             },
                       icon: _isLoading
                           ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.check_circle_outline_rounded, size: 16),
-                      label: const Text('VALIDER & IMPRIMER', style: TextStyle(fontWeight: FontWeight.w900)),
+                          : const Icon(Icons.print_rounded, size: 16),
+                      label: const Text('VALIDER & ÉMETTRE REÇU', style: TextStyle(fontWeight: FontWeight.w900)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.vert,
                         foregroundColor: Colors.white,
@@ -509,31 +524,45 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
 
 class _PayMethodChip extends StatelessWidget {
   final String label;
+  final IconData icon;
   final String value;
   final bool selected;
   final VoidCallback onTap;
 
-  const _PayMethodChip({required this.label, required this.value, required this.selected, required this.onTap});
+  const _PayMethodChip({
+    required this.label,
+    required this.icon,
+    required this.value,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         margin: const EdgeInsets.only(bottom: 6),
         decoration: BoxDecoration(
           color: selected ? AppColors.bleu : AppColors.fond,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: selected ? AppColors.bleu : AppColors.bord),
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : AppColors.texte,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: selected ? Colors.white : AppColors.gris),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: selected ? Colors.white : AppColors.texte,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -573,9 +602,9 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
   Future<void> _load() async {
     try {
       final res = await ApiClient().get(ApiEndpoints.secretaryCustomers);
-      final List data = res['data'] ?? res['customers'] ?? [];
+      final list = ApiClient.extractList(res, 'customers');
       setState(() {
-        _customers = data.map((c) => Customer.fromJson(c)).toList();
+        _customers = list.map((c) => Customer.fromJson(c as Map<String, dynamic>)).toList();
         _filtered = List.from(_customers);
         _loading = false;
       });
@@ -589,8 +618,8 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       child: SizedBox(
-        width: 400,
-        height: 480,
+        width: 440,
+        height: 500,
         child: Column(
           children: [
             Container(
@@ -601,9 +630,9 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.people_alt_rounded, color: Colors.white, size: 16),
+                  const Icon(Icons.people_alt_rounded, color: Colors.white, size: 18),
                   const SizedBox(width: 8),
-                  const Text('Sélectionner un client', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                  const Text('Sélectionner un client', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.white, size: 16),
@@ -615,11 +644,11 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               child: TextField(
                 controller: _searchCtrl,
                 decoration: InputDecoration(
-                  hintText: 'Rechercher par nom ou téléphone...',
+                  hintText: 'Rechercher par nom, téléphone ou code…',
                   prefixIcon: const Icon(Icons.search_rounded, size: 18),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
@@ -629,35 +658,38 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
             Expanded(
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: _filtered.length,
-                      itemBuilder: (_, i) {
-                        final c = _filtered[i];
-                        return ListTile(
-                          dense: true,
-                          leading: CircleAvatar(
-                            backgroundColor: AppColors.bleu,
-                            radius: 16,
-                            child: Text(
-                              c.name.substring(0, 1).toUpperCase(),
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                          title: Text(c.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                          subtitle: Text(c.phone ?? c.email ?? '', style: const TextStyle(fontSize: 11)),
-                          onTap: () => Navigator.pop(context, c),
-                        );
-                      },
-                    ),
+                  : _filtered.isEmpty
+                      ? const Center(child: Text('Aucun client trouvé', style: TextStyle(color: AppColors.gris, fontSize: 12)))
+                      : ListView.builder(
+                          itemCount: _filtered.length,
+                          itemBuilder: (_, i) {
+                            final c = _filtered[i];
+                            return ListTile(
+                              dense: true,
+                              leading: CircleAvatar(
+                                backgroundColor: AppColors.bleu.withOpacity(0.1),
+                                radius: 16,
+                                child: Text(
+                                  c.name.substring(0, 1).toUpperCase(),
+                                  style: const TextStyle(color: AppColors.bleu, fontSize: 12, fontWeight: FontWeight.w900),
+                                ),
+                              ),
+                              title: Text(c.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                              subtitle: Text('${c.code} ${c.phone != null ? '• ${c.phone}' : ''}', style: const TextStyle(fontSize: 11, color: AppColors.gris)),
+                              onTap: () => Navigator.pop(context, c),
+                            );
+                          },
+                        ),
             ),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.all(12),
               child: Row(
                 children: [
                   Expanded(
-                    child: OutlinedButton(
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.storefront_outlined, size: 16),
                       onPressed: () => Navigator.pop(context, null),
-                      child: const Text('Client Comptoir'),
+                      label: const Text('Client Comptoir (Sans fiche)'),
                     ),
                   ),
                 ],
@@ -669,4 +701,3 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
     );
   }
 }
-
