@@ -76,5 +76,15 @@ class CustomerController extends Controller
             'customer' => $customer,
         ]);
     }
+
+    public function destroy(Customer $customer): JsonResponse
+    {
+        $customer->update(['is_active' => false]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Client {$customer->name} désactivé avec succès.",
+        ]);
+    }
 }
 

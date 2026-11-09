@@ -1,3 +1,3 @@
 Dernier intervenant : Antigravity (Gemini 3.8 Flash) | IDE : Antigravity | Dossier : ANTIGRAVITY
-Dernière intervention : 2026-11-09 12:27 +00:00 | Intégration du logo officiel, refonte moderne sans emojis, support des dimensions en m², remises personnalisées, défilement responsive anti-overflow et correction des listes API.
+Dernière intervention : 2026-11-09 13:06 +00:00 | Correction encaissement POS (payload items/designation), clôture caisse Z (saisie physique), menu rétractable dynamique, export/édition clients, et gestion devis/consommables.
 Reprise : Frontend Flutter Desktop et Backend Laravel 11 opérationnels. | Prochaine action : Validation utilisateur en direct.

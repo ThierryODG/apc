@@ -41,3 +41,4 @@ class ProductIconHelper {
     return Icons.inventory_2_outlined;
   }
 }
+

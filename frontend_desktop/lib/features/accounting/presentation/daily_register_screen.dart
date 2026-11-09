@@ -89,24 +89,67 @@ class _DailyRegisterScreenState extends State<DailyRegisterScreen> {
   }
 
   Future<void> _closeRegister() async {
-    final confirm = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
-      title: const Text('Clôture de caisse', style: TextStyle(fontWeight: FontWeight.w900)),
-      content: const Text('Voulez-vous clôturer la caisse ? Cette action génère un rapport Z et ferme la journée.'),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(ctx, true),
-          style: ElevatedButton.styleFrom(backgroundColor: AppColors.rouge),
-          child: const Text('Clôturer', style: TextStyle(color: Colors.white)),
+    final theoretical = double.tryParse('${_register?['theoretical_closing_balance'] ?? _register?['net_balance'] ?? 0}') ?? 0.0;
+    final balanceCtrl = TextEditingController(
+      text: theoretical.toInt().toString(),
+    );
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_clock_rounded, color: AppColors.rouge, size: 20),
+            SizedBox(width: 8),
+            Text('Clôture de caisse (Rapport Z)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+          ],
         ),
-      ],
-    ));
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Indiquez le montant physique réel compté en caisse (espèces) pour finaliser le rapport Z :',
+              style: TextStyle(fontSize: 12, color: AppColors.gris),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: balanceCtrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              autofocus: true,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
+              decoration: const InputDecoration(
+                labelText: 'Montant physique réel compté',
+                suffixText: 'FCFA',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Annuler')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.rouge),
+            child: const Text('Clôturer définitivement'),
+          ),
+        ],
+      ),
+    );
+
     if (confirm != true) return;
     setState(() => _actionLoading = true);
     try {
-      await ApiClient().post(ApiEndpoints.dailyRegisterClose, {});
+      final actualBalance = double.tryParse(balanceCtrl.text.replaceAll(',', '.').trim()) ?? theoretical;
+      await ApiClient().post(ApiEndpoints.dailyRegisterClose, {
+        'actual_closing_balance': actualBalance,
+      });
       await _load();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Caisse clôturée. Rapport Z généré.'), backgroundColor: AppColors.vert));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Caisse clôturée. Rapport Z généré avec succès.'), backgroundColor: AppColors.vert),
+        );
+      }
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.rouge));
     } finally { setState(() => _actionLoading = false); }

@@ -11,8 +11,8 @@ class NavItem {
   const NavItem({required this.icon, required this.label, required this.route});
 }
 
-/// Sidebar moderne 230px avec le vrai logo de la marque
-class AppSidebar extends StatelessWidget {
+/// Sidebar moderne repliable (dynamique : mode étendu 220px ou compact 72px)
+class AppSidebar extends StatefulWidget {
   final String selectedRoute;
   final Function(String route) onRouteChanged;
 
@@ -21,6 +21,13 @@ class AppSidebar extends StatelessWidget {
     required this.selectedRoute,
     required this.onRouteChanged,
   });
+
+  @override
+  State<AppSidebar> createState() => _AppSidebarState();
+}
+
+class _AppSidebarState extends State<AppSidebar> {
+  bool _isCollapsed = false;
 
   List<NavItem> _itemsForRole(String role) {
     switch (role) {
@@ -35,7 +42,7 @@ class AppSidebar extends StatelessWidget {
         return const [
           NavItem(icon: Icons.analytics_outlined, label: 'Tableau de bord', route: 'accounting.dashboard'),
           NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Journal Trésorerie', route: 'accounting.cashflows'),
-          NavItem(icon: Icons.receipt_outlined, label: 'Dépenses', route: 'accounting.expenses'),
+          NavItem(icon: Icons.inventory_2_outlined, label: 'Consommables & Stocks', route: 'accounting.expenses'),
           NavItem(icon: Icons.pending_actions_rounded, label: 'Créances clients', route: 'accounting.receivables'),
           NavItem(icon: Icons.lock_clock_rounded, label: 'Clôture de caisse (Z)', route: 'accounting.daily_register'),
         ];
@@ -58,93 +65,77 @@ class AppSidebar extends StatelessWidget {
     final auth = AuthState();
     final role = auth.currentUser?.role ?? 'secretary';
     final items = _itemsForRole(role);
-    final company = auth.company;
 
-    return Container(
-      width: 230,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      width: _isCollapsed ? 74 : 224,
       decoration: const BoxDecoration(
-        color: Color(0xFF072747), // Bleu nuit sobre et corporate
+        color: Color(0xFF072747),
         border: Border(right: BorderSide(color: Color(0x1AFFFFFF))),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── En-tête : Logo officiel de la marque ──────────
+          // ── En-tête : Logo pur sans texte parasite + Bouton toggle ──
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: Color(0x1AFFFFFF))),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Row(
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: Image.asset(
-                    'assets/brand/logo.png',
-                    height: 48,
-                    fit: BoxFit.contain,
-                    errorBuilder: (_, __, ___) => Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.orange,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: const Icon(Icons.print_rounded, color: Colors.white, size: 20),
-                        ),
-                        const SizedBox(width: 10),
-                        const Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'AFRICA PRINT',
-                              style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
-                            ),
-                            Text(
-                              'COMMUNICATION',
-                              style: TextStyle(color: AppColors.orange, fontSize: 9, fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                      ],
+                Expanded(
+                  child: Align(
+                    alignment: _isCollapsed ? Alignment.center : Alignment.centerLeft,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Image.asset(
+                        'assets/brand/logo.png',
+                        height: 40,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.print_rounded, color: Colors.white, size: 28),
+                      ),
                     ),
                   ),
                 ),
-                if (company != null) ...[
-                  const SizedBox(height: 10),
-                  Text(
-                    company.name,
-                    style: const TextStyle(color: Color(0x99FFFFFF), fontSize: 10, fontWeight: FontWeight.w600),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                IconButton(
+                  icon: Icon(
+                    _isCollapsed ? Icons.chevron_right_rounded : Icons.chevron_left_rounded,
+                    color: Colors.white70,
+                    size: 20,
                   ),
-                ],
+                  tooltip: _isCollapsed ? 'Agrandir le menu' : 'Réduire le menu',
+                  onPressed: () => setState(() => _isCollapsed = !_isCollapsed),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                ),
               ],
             ),
           ),
 
-          // ── Menu de navigation (Style Sobre, moderne, sans ligne latérale orange IA) ──
+          // ── Liste des items de menu ──
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               children: items.map((item) => _NavTile(
                 item: item,
-                isSelected: selectedRoute == item.route,
-                onTap: () => onRouteChanged(item.route),
+                isCollapsed: _isCollapsed,
+                isSelected: widget.selectedRoute == item.route,
+                onTap: () => widget.onRouteChanged(item.route),
               )).toList(),
             ),
           ),
 
-          // ── Pied de page : Profil utilisateur ───────────────
+          // ── Pied de page : Profil utilisateur ──
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: const BoxDecoration(
               color: Color(0xFF051C33),
               border: Border(top: BorderSide(color: Color(0x1AFFFFFF))),
             ),
             child: Row(
+              mainAxisAlignment: _isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 32,
@@ -159,31 +150,33 @@ class AppSidebar extends StatelessWidget {
                     style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
                   ),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        auth.currentUser?.name ?? '',
-                        style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        _roleLabel(role),
-                        style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 10, fontWeight: FontWeight.w500),
-                      ),
-                    ],
+                if (!_isCollapsed) ...[
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          auth.currentUser?.name ?? '',
+                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          _roleLabel(role),
+                          style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 10, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.logout_rounded, size: 17, color: Color(0xAAFFFFFF)),
-                  tooltip: 'Déconnexion',
-                  onPressed: () => auth.logout(),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
+                  IconButton(
+                    icon: const Icon(Icons.logout_rounded, size: 17, color: Color(0xAAFFFFFF)),
+                    tooltip: 'Déconnexion',
+                    onPressed: () => auth.logout(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ],
             ),
           ),
@@ -208,10 +201,16 @@ class AppSidebar extends StatelessWidget {
 
 class _NavTile extends StatefulWidget {
   final NavItem item;
+  final bool isCollapsed;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _NavTile({required this.item, required this.isSelected, required this.onTap});
+  const _NavTile({
+    required this.item,
+    required this.isCollapsed,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   State<_NavTile> createState() => _NavTileState();
@@ -223,45 +222,54 @@ class _NavTileState extends State<_NavTile> {
   @override
   Widget build(BuildContext context) {
     final active = widget.isSelected;
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit: (_) => setState(() => _hovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 140),
-          margin: const EdgeInsets.only(bottom: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: active
-                ? Colors.white.withOpacity(0.14) // Fond sobre semi-transparent moderne
-                : _hovered
-                    ? Colors.white.withOpacity(0.06)
-                    : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                widget.item.icon,
-                size: 18,
-                color: active ? Colors.white : const Color(0xAAFFFFFF),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  widget.item.label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: active ? FontWeight.w800 : FontWeight.w500,
-                    color: active ? Colors.white : const Color(0xCCFFFFFF),
-                    letterSpacing: 0.2,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+    return Tooltip(
+      message: widget.isCollapsed ? widget.item.label : '',
+      waitDuration: const Duration(milliseconds: 300),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hovered = true),
+        onExit: (_) => setState(() => _hovered = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 140),
+            margin: const EdgeInsets.only(bottom: 4),
+            padding: EdgeInsets.symmetric(
+              horizontal: widget.isCollapsed ? 0 : 12,
+              vertical: 10,
+            ),
+            decoration: BoxDecoration(
+              color: active
+                  ? Colors.white.withOpacity(0.14)
+                  : _hovered
+                      ? Colors.white.withOpacity(0.06)
+                      : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              mainAxisAlignment: widget.isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              children: [
+                Icon(
+                  widget.item.icon,
+                  size: 19,
+                  color: active ? Colors.white : const Color(0xAAFFFFFF),
                 ),
-              ),
-            ],
+                if (!widget.isCollapsed) ...[
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      widget.item.label,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: active ? FontWeight.w800 : FontWeight.w500,
+                        color: active ? Colors.white : const Color(0xCCFFFFFF),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
       ),

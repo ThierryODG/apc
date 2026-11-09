@@ -165,18 +165,21 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     try {
       final orderLines = _lines.map((l) => {
         'product_id': l.productId,
+        'designation': l.productName,
+        'unit': l.unit,
         'quantity': l.quantity,
         'unit_price': l.unitPrice,
+        'discount_amount': 0,
       }).toList();
 
       final body = {
         'customer_id': _selectedCustomer?.id,
-        'discount_amount': _discountAmount,
-        'is_percentage_discount': _isPercentageDiscount,
-        'payment_method': method,
-        'amount_received': amountReceived,
         'items': orderLines,
-        'fiscal_year_id': AuthState().activeFiscalYear?.id,
+        'payment': {
+          'method': method,
+          'amount': total,
+          'amount_received': amountReceived,
+        },
       };
 
       await ApiClient().post(ApiEndpoints.secretaryOrders, body);
