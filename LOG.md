@@ -1,3 +1,3 @@
-Dernier intervenant : GitHub Copilot | IDE : VS Code | Dossier : VS_CODE
-Dernière intervention : 2026-10-27 14:32 +00:00 | Frontend découpé par fonctionnalités/profils, vues production desktop/mobile; routes Laravel ventilées par domaine; plan et contrôles responsive mis à jour.
-Reprise : 5 tests Flutter et 5 tests API commandes passent; migrations commandes non appliquées en base locale. Prochaine action : raccorder la conversion devis→commande dans l’interface secrétariat et faire tester secrétariat/machiniste.
+Dernier intervenant : Antigravity (Gemini 3.8 Flash High) | IDE : Antigravity | Dossier : backend
+Dernière intervention : 2026-11-09 10:30 +00:00 | Branche v2-main initialisée (v1 archivée). Refonte complète Backend Laravel 11 MVC modulaire par profil (Admin, Secrétariat style Aronium POS, Comptabilité & Caisse), gestion exercice fiscal 2025-2026, paramétrage entreprise (IFU, logo, pied de page), impression reçus et 13/13 tests validés (100 assertions).
+Reprise : Backend opérationnel, migrations & seeders prêts, 13 tests passent. | Prochaine action : Valider avec l'utilisateur les maquettes/illustrations UX avant de démarrer le frontend.
