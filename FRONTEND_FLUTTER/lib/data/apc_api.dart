@@ -135,6 +135,19 @@ class ApcApi {
     );
   }
 
+  Future<List<Map<String, dynamic>>> workOrders() async {
+    final data = await _request('GET', '/api/v1/work-orders');
+    return _asMaps(data is Map ? data['data'] : data);
+  }
+
+  Future<void> updateWorkOrderStatus(int id, String status) async {
+    await _request(
+      'PATCH',
+      '/api/v1/work-orders/$id/status',
+      body: {'status': status},
+    );
+  }
+
   Future<dynamic> _request(
     String method,
     String path, {

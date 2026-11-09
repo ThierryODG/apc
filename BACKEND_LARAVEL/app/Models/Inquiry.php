@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Inquiry extends Model
 {
@@ -56,5 +57,10 @@ class Inquiry extends Model
     public function files(): HasMany
     {
         return $this->hasMany(InquiryFile::class);
+    }
+
+    public function order(): HasOne
+    {
+        return $this->hasOne(Order::class);
     }
 }

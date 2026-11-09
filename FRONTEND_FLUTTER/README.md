@@ -1,6 +1,6 @@
 # APC Flutter
 
-Prototype multiplateforme du bureau APC, connecté au backend Laravel.
+Application Flutter multiplateforme pour les espaces internes APC, connectée au backend Laravel. Le code métier et les dépôts sont partagés; les présentations sont séparées par fonctionnalité et peuvent varier entre desktop et mobile.
 
 ## Démarrage local
 
@@ -11,7 +11,7 @@ cd BACKEND_LARAVEL
 php artisan serve --host=0.0.0.0 --port=8000
 ```
 
-Sur une nouvelle base locale, appliquer d’abord les migrations et seeders prévus par le projet. Les deux migrations Inquiry ajoutées en octobre 2026 doivent être exécutées avant d’ouvrir la vue Demandes.
+Sur une nouvelle base locale, appliquer d’abord les migrations et seeders prévus par le projet. Les migrations Inquiry, commandes et ordres de travail doivent être exécutées avant d’utiliser leurs parcours.
 
 Terminal 2, Flutter Web :
 
@@ -32,9 +32,19 @@ Pour un émulateur Android, l’URL par défaut utilise `10.0.2.2:8000`. Depuis 
 - Consultation du catalogue.
 - Liste et création de clients.
 - Liste, création, qualification, suivi du devis et refus des demandes entrantes.
-- Navigation adaptative : barre latérale desktop, navigation basse sur petit écran.
+- Espace de production machiniste : file filtrée par l’API, évolution de statut, table desktop et cartes tactiles mobile.
+- Navigation par rôle et permission; les espaces direction, comptabilité et PAO sont séparés mais explicitement en préparation.
 
-Les commandes, fichiers, production, pointage, congés, paie, notifications et portail client complet ne sont pas encore implémentés. La vue demandes ne marque pas une commande comme convertie, car le module Commandes n’existe pas encore.
+La conversion de devis en commande est disponible dans l’API; le bouton de conversion reste à ajouter à l’interface secrétariat. Les fichiers, le contrôle qualité, les stocks, le pointage, les congés, la paie, les notifications et le portail client ne sont pas encore disponibles.
+
+## Organisation du code
+
+- `lib/app/` : composition globale et session.
+- `lib/core/` : thème, rôles et utilitaires partagés.
+- `lib/features/<domaine>/` : code par fonctionnalité et couches `application`, `data`, `domain`, `presentation` selon besoin.
+- `lib/features/production/presentation/` : vues production desktop et mobile distinctes.
+- `lib/shared/` : composants de présentation réutilisables.
+- `lib/data/` : transport HTTP commun; les dépôts propres à chaque fonctionnalité l’utilisent.
 
 ## Plateformes
 
@@ -46,4 +56,10 @@ Flutter Web fonctionne sur le poste de développement actuel. Windows Desktop do
 flutter analyze
 flutter test
 flutter build web
+```
+
+Vérification courte des espaces de connexion et de production :
+
+```powershell
+flutter test test/widget_test.dart
 ```

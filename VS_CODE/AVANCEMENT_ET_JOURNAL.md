@@ -1,6 +1,26 @@
 # Suivi VS Code — APC
 
-Dernière mise à jour : 2026-10-13 23:32 +00:00.
+Dernière mise à jour : 2026-10-27 14:32 +00:00.
+
+## État actuel — 2026-10-27
+
+- Frontend réorganisé : `lib/apc_app.dart` est une façade d’une ligne; shell/session, authentification, secrétariat, production, profils et widgets partagés sont répartis sous `lib/app/`, `lib/core/`, `lib/features/` et `lib/shared/`.
+- Auth et secrétariat ont maintenant des couches application/data distinctes. La production a modèle, dépôt, contrôleur, file desktop en tableau et interface mobile en cartes/actions.
+- Secrétariat, machiniste, Graphiste/PAO, direction et comptabilité arrivent chacun à un espace identifié. Direction, comptabilité et PAO sont des pages d’attente explicites; leurs services métier ne sont pas encore implémentés.
+- API Laravel reste organisée par ressource/domaines. Les routes ont été ventilées dans `routes/api/v1/`; les contrôleurs ne sont pas dupliqués par rôle, les permissions backend restent la frontière de sécurité.
+- API Commande/Ordre de travail : demande avec devis envoyé -> commande -> ordre affecté à un département; file filtrée par département; transitions démarrer/bloquer/terminer. La conversion UI côté secrétaire n’est pas encore raccordée.
+- Migrations `orders`/`work_orders` présentes, mais non appliquées à la base PostgreSQL locale.
+- Vérifications : `flutter analyze` sans erreur; `flutter test test/widget_test.dart` 5 tests passés, dont une fenêtre desktop basse; `php artisan route:list --path=api --except-vendor` affiche 30 routes; test `OrderTest` 5 scénarios/24 assertions passés; Pint appliqué. Les 5 tests backend affichent l’avertissement PDO de dépréciation déjà connu.
+- Flutter Web et Laravel tournent actuellement sur `http://127.0.0.1:5173` et `http://127.0.0.1:8000`. Changements non committés sur `main`; rien n’a été poussé.
+
+### Prochaine reprise
+
+1. Ajouter le bouton de conversion du devis en commande dans la vue secrétariat, avec choix d’atelier, puis rafraîchir la file réelle.
+2. Faire tester avec un compte secrétaire et un compte machiniste; vérifier les rôles réels et l’affectation des employés.
+3. Implémenter les vrais parcours direction, comptabilité et PAO avant de les déclarer disponibles.
+4. Appliquer les migrations en local uniquement après vérification de la base ciblée; ne pas lancer de `migrate:fresh` sur la base de travail.
+
+## Notes précédentes — 2026-10-13
 
 ## État vérifié à la reprise
 

@@ -28,4 +28,9 @@ class Department extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function workOrders(): HasMany
+    {
+        return $this->hasMany(WorkOrder::class);
+    }
 }

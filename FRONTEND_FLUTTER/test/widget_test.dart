@@ -43,6 +43,19 @@ void main() {
     expect(find.text('Ouvrir mon espace'), findsOneWidget);
   });
 
+  testWidgets('wide login fits a short desktop window', (tester) async {
+    tester.view.physicalSize = const Size(1440, 540);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const ApcApp());
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Ouvrir mon espace'), findsOneWidget);
+  });
+
   testWidgets('staff login loads the connected APC workspace', (tester) async {
     final api = ApcApi(
       client: MockClient((request) async {
@@ -57,7 +70,13 @@ void main() {
                 'name': 'Thierry APC',
                 'email': 'admin@africaprint.com',
                 'department': {'name': 'Direction Générale'},
-                'permissions': ['customers.view', 'inquiries.view'],
+                'roles': ['Secretaire'],
+                'permissions': [
+                  'catalog.view',
+                  'customers.view',
+                  'inquiries.view',
+                  'inquiries.create',
+                ],
               },
             },
           },
@@ -97,5 +116,64 @@ void main() {
 
     expect(find.text('Bonjour Thierry.'), findsOneWidget);
     expect(find.text('Saisir une demande'), findsOneWidget);
+  });
+
+  testWidgets('machinist workspace hides and skips commercial data', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final requestedPaths = <String>[];
+    final api = ApcApi(
+      client: MockClient((request) async {
+        requestedPaths.add(request.url.path);
+        final payload = request.url.path == '/api/v1/auth/login'
+            ? {
+                'success': true,
+                'data': {
+                  'token': 'test-token',
+                  'user': {
+                    'id': 8,
+                    'name': 'Opérateur APC',
+                    'email': 'machiniste@africaprint.com',
+                    'roles': ['Machiniste'],
+                    'department': {'name': 'Atelier Numérique'},
+                    'permissions': [
+                      'orders.view',
+                      'production.view_queue',
+                      'hr.record_attendance',
+                    ],
+                  },
+                },
+              }
+            : {'success': true, 'data': null};
+        return http.Response(
+          jsonEncode(payload),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }),
+    );
+
+    await tester.pumpWidget(ApcApp(api: api));
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'machiniste@africaprint.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'test-password');
+    await tester.tap(find.text('Ouvrir mon espace'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Aucun travail affecté'), findsOneWidget);
+    expect(find.text('Demandes'), findsNothing);
+    expect(find.text('Clients'), findsNothing);
+    expect(find.text('Catalogue'), findsNothing);
+    expect(requestedPaths, [
+      '/api/v1/auth/login',
+      '/api/v1/work-orders',
+    ]);
   });
 }
