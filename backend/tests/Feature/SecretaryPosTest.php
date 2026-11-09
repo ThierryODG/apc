@@ -123,5 +123,77 @@ class SecretaryPosTest extends TestCase
                 ],
             ]);
     }
+
+    public function test_admin_can_manage_catalog_with_dimensions(): void
+    {
+        $admin = User::where('role', 'admin')->first();
+
+        $createCategory = $this->actingAs($admin)->postJson('/api/admin/catalog/categories', [
+            'code' => 'CAT-SIGN',
+            'name' => 'Signalétique / Vinyle',
+            'description' => 'Bâches, affiches, vinyles',
+            'is_active' => true,
+        ]);
+
+        $createCategory->assertStatus(201)
+            ->assertJsonPath('success', true);
+
+        $categoryId = $createCategory->json('category.id');
+
+        $createProduct = $this->actingAs($admin)->postJson('/api/admin/catalog/products', [
+            'category_id' => $categoryId,
+            'code' => 'VINYLE-STD',
+            'name' => 'Vinyle adhésif standard',
+            'description' => 'Impression sur vinyle adhésif',
+            'unit' => 'm²',
+            'unit_price' => 7500,
+            'tax_rate' => 0,
+            'allow_dimensions' => true,
+            'length_field' => true,
+            'width_field' => true,
+            'length_label' => 'Longueur (m)',
+            'width_label' => 'Largeur (m)',
+            'default_length' => 1,
+            'default_width' => 1,
+        ]);
+
+        $createProduct->assertStatus(201)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('product.allow_dimensions', true)
+            ->assertJsonPath('product.length_field', true)
+            ->assertJsonPath('product.width_field', true);
+
+        $productId = $createProduct->json('product.id');
+
+        $getCatalog = $this->actingAs($admin)->getJson('/api/admin/catalog');
+        $getCatalog->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonFragment([
+                'code' => 'VINYLE-STD',
+                'allow_dimensions' => true,
+                'length_field' => true,
+                'width_field' => true,
+            ]);
+
+        $update = $this->actingAs($admin)->putJson("/api/admin/catalog/products/{$productId}", [
+            'name' => 'Vinyle adhésif premium',
+            'unit_price' => 9000,
+            'allow_dimensions' => true,
+            'length_field' => true,
+            'width_field' => true,
+            'default_length' => 2,
+            'default_width' => 1.5,
+        ]);
+
+        $update->assertStatus(200)
+            ->assertJsonPath('success', true)
+            ->assertJsonPath('product.name', 'Vinyle adhésif premium')
+            ->assertJsonPath('product.default_length', '2.00')
+            ->assertJsonPath('product.default_width', '1.50');
+
+        $delete = $this->actingAs($admin)->deleteJson("/api/admin/catalog/products/{$productId}");
+        $delete->assertStatus(200)
+            ->assertJsonPath('success', true);
+    }
 }
 

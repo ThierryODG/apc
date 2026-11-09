@@ -18,6 +18,13 @@ class Product extends Model
         'unit_price',
         'tax_rate',
         'is_active',
+        'allow_dimensions',
+        'length_field',
+        'width_field',
+        'length_label',
+        'width_label',
+        'default_length',
+        'default_width',
     ];
 
     protected function casts(): array
@@ -26,6 +33,11 @@ class Product extends Model
             'unit_price' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'is_active' => 'boolean',
+            'allow_dimensions' => 'boolean',
+            'length_field' => 'boolean',
+            'width_field' => 'boolean',
+            'default_length' => 'decimal:2',
+            'default_width' => 'decimal:2',
         ];
     }
 

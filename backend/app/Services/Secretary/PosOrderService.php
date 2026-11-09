@@ -49,6 +49,18 @@ class PosOrderService
 
             foreach ($data['items'] as $itemData) {
                 $qty = (float) $itemData['quantity'];
+                $length = isset($itemData['length']) ? (float) $itemData['length'] : null;
+                $width = isset($itemData['width']) ? (float) $itemData['width'] : null;
+                $surface = isset($itemData['surface_area']) ? (float) $itemData['surface_area'] : null;
+
+                if ($surface === null && $length !== null && $width !== null) {
+                    $surface = $length * $width;
+                }
+
+                if ($surface !== null && $qty <= 0) {
+                    $qty = $surface;
+                }
+
                 $unitPrice = (float) $itemData['unit_price'];
                 $discount = (float) ($itemData['discount_amount'] ?? 0);
                 $taxRate = (float) ($itemData['tax_rate'] ?? 0);
@@ -63,6 +75,9 @@ class PosOrderService
                     'designation' => $itemData['designation'],
                     'unit' => $itemData['unit'] ?? 'unité',
                     'quantity' => $qty,
+                    'length' => $length,
+                    'width' => $width,
+                    'surface_area' => $surface,
                     'unit_price' => $unitPrice,
                     'tax_rate' => $taxRate,
                     'discount_amount' => $discount,

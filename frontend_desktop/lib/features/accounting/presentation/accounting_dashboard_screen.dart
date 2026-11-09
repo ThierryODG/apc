@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/constants/api_endpoints.dart';
@@ -7,7 +8,8 @@ class AccountingDashboardScreen extends StatefulWidget {
   const AccountingDashboardScreen({super.key});
 
   @override
-  State<AccountingDashboardScreen> createState() => _AccountingDashboardScreenState();
+  State<AccountingDashboardScreen> createState() =>
+      _AccountingDashboardScreenState();
 }
 
 class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
@@ -24,29 +26,64 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
   Future<void> _load() async {
     try {
       final res = await ApiClient().get(ApiEndpoints.accountingDashboard);
-      setState(() { _data = res; _loading = false; });
+      final summary = res['treasury_summary'] is Map
+          ? Map<String, dynamic>.from(res['treasury_summary'])
+          : <String, dynamic>{};
+      setState(() {
+        _data = {
+          'monthly_income': summary['total_cash_in'] ?? 0,
+          'monthly_expenses': summary['total_cash_out'] ?? 0,
+          'net_balance': summary['net_cash_balance'] ?? 0,
+          'total_receivables': summary['total_receivables'] ?? 0,
+          'recent_movements':
+              res['recent_movements'] ?? res['daily_trends'] ?? [],
+        };
+        _loading = false;
+      });
     } catch (e) {
-      setState(() { _error = e.toString(); _loading = false; });
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
     }
   }
 
   String _fmt(dynamic v) {
     final n = (double.tryParse('$v') ?? 0).toInt();
-    if (n >= 1000000) return '${(n ~/ 1000000)}M ${((n % 1000000) ~/ 1000).toString().padLeft(3, '0')} F';
-    if (n >= 1000) return '${n ~/ 1000} ${(n % 1000).toString().padLeft(3, '0')} F';
+    if (n >= 1000000)
+      return '${(n ~/ 1000000)}M ${((n % 1000000) ~/ 1000).toString().padLeft(3, '0')} F';
+    if (n >= 1000)
+      return '${n ~/ 1000} ${(n % 1000).toString().padLeft(3, '0')} F';
     return '$n F';
   }
 
   @override
   Widget build(BuildContext context) {
+    final income = double.tryParse('${_data['monthly_income'] ?? 0}') ?? 0.0;
+    final expenses =
+        double.tryParse('${_data['monthly_expenses'] ?? 0}') ?? 0.0;
+    final totalFlow = income + expenses;
+    final incomeRatio = totalFlow > 0 ? income / totalFlow : 0.0;
+    final expensesRatio = totalFlow > 0 ? expenses / totalFlow : 0.0;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _ScreenHeader(title: 'Tableau de bord — Comptabilité & Trésorerie', icon: Icons.analytics_outlined),
+        _ScreenHeader(
+          title: 'Tableau de bord — Comptabilité & Trésorerie',
+          icon: Icons.analytics_outlined,
+        ),
         if (_loading)
           const Expanded(child: Center(child: CircularProgressIndicator()))
         else if (_error != null)
-          Expanded(child: Center(child: Text(_error!, style: const TextStyle(color: AppColors.rouge))))
+          Expanded(
+            child: Center(
+              child: Text(
+                _error!,
+                style: const TextStyle(color: AppColors.rouge),
+              ),
+            ),
+          )
         else
           Expanded(
             child: SingleChildScrollView(
@@ -111,15 +148,27 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
                               children: [
                                 Text(
                                   'RATIO TRÉSORERIE : REVIENT VS SORTIES',
-                                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.bleu, letterSpacing: 0.5),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.bleu,
+                                    letterSpacing: 0.5,
+                                  ),
                                 ),
                                 SizedBox(height: 2),
-                                Text('Performance d\'exploitation de l\'imprimerie', style: TextStyle(fontSize: 11, color: AppColors.gris)),
+                                Text(
+                                  'Performance d\'exploitation de l\'imprimerie',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.gris,
+                                  ),
+                                ),
                               ],
                             ),
                           ],
                         ),
                         const SizedBox(height: 20),
+
                         Row(
                           children: [
                             Expanded(
@@ -127,26 +176,47 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Row(
                                         children: [
-                                          Icon(Icons.circle, size: 10, color: AppColors.vert),
+                                          Icon(
+                                            Icons.circle,
+                                            size: 10,
+                                            color: AppColors.vert,
+                                          ),
                                           SizedBox(width: 6),
-                                          Text('Encaissements', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                          Text(
+                                            'Encaissements',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
                                         ],
                                       ),
-                                      Text(_fmt(_data['monthly_income']), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.vert)),
+                                      Text(
+                                        _fmt(_data['monthly_income']),
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.vert,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
-                                    child: const LinearProgressIndicator(
-                                      value: 0.78,
+                                    child: LinearProgressIndicator(
+                                      value: incomeRatio,
                                       minHeight: 12,
                                       backgroundColor: AppColors.fond,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.vert),
+                                      valueColor:
+                                          const AlwaysStoppedAnimation<Color>(
+                                            AppColors.vert,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -158,26 +228,47 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Row(
                                         children: [
-                                          Icon(Icons.circle, size: 10, color: AppColors.rouge),
+                                          Icon(
+                                            Icons.circle,
+                                            size: 10,
+                                            color: AppColors.rouge,
+                                          ),
                                           SizedBox(width: 6),
-                                          Text('Décaissements', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
+                                          Text(
+                                            'Décaissements',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
                                         ],
                                       ),
-                                      Text(_fmt(_data['monthly_expenses']), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.rouge)),
+                                      Text(
+                                        _fmt(_data['monthly_expenses']),
+                                        style: const TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          color: AppColors.rouge,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                   const SizedBox(height: 8),
                                   ClipRRect(
                                     borderRadius: BorderRadius.circular(4),
-                                    child: const LinearProgressIndicator(
-                                      value: 0.28,
+                                    child: LinearProgressIndicator(
+                                      value: expensesRatio,
                                       minHeight: 12,
                                       backgroundColor: AppColors.fond,
-                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.rouge),
+                                      valueColor:
+                                          const AlwaysStoppedAnimation<Color>(
+                                            AppColors.rouge,
+                                          ),
                                     ),
                                   ),
                                 ],
@@ -194,7 +285,12 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
                   // ── Derniers flux de trésorerie ─────────────────────
                   const Text(
                     'HISTORIQUE RÉCENT DES MOUVEMENTS DE CAISSE',
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: AppColors.bleu),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                      color: AppColors.bleu,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   Container(
@@ -206,10 +302,15 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
                     child: ListView.separated(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      itemCount: (_data['recent_movements'] as List? ?? []).take(6).length,
-                      separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.bord),
+                      itemCount: (_data['recent_movements'] as List? ?? [])
+                          .take(6)
+                          .length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, color: AppColors.bord),
                       itemBuilder: (ctx, i) {
-                        final m = (_data['recent_movements'] as List)[i] as Map<String, dynamic>;
+                        final m =
+                            (_data['recent_movements'] as List)[i]
+                                as Map<String, dynamic>;
                         final isIn = m['type'] == 'in';
                         return ListTile(
                           dense: true,
@@ -217,17 +318,32 @@ class _AccountingDashboardScreenState extends State<AccountingDashboardScreen> {
                             width: 34,
                             height: 34,
                             decoration: BoxDecoration(
-                              color: (isIn ? AppColors.vert : AppColors.rouge).withOpacity(0.08),
+                              color: (isIn ? AppColors.vert : AppColors.rouge)
+                                  .withOpacity(0.08),
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Icon(
-                              isIn ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                              isIn
+                                  ? Icons.arrow_downward_rounded
+                                  : Icons.arrow_upward_rounded,
                               size: 16,
                               color: isIn ? AppColors.vert : AppColors.rouge,
                             ),
                           ),
-                          title: Text(m['description'] ?? 'Mouvement sans libellé', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700)),
-                          subtitle: Text(m['date'] ?? '', style: const TextStyle(fontSize: 11, color: AppColors.gris)),
+                          title: Text(
+                            m['description'] ?? 'Mouvement sans libellé',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          subtitle: Text(
+                            m['date'] ?? '',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gris,
+                            ),
+                          ),
                           trailing: Text(
                             '${isIn ? '+' : '-'} ${_fmt(m['amount'])}',
                             style: TextStyle(
@@ -292,11 +408,28 @@ class _AccKpiCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Text(label, style: const TextStyle(fontSize: 11, color: AppColors.gris, fontWeight: FontWeight.w600)),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColors.gris,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: color)),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(subtitle, style: const TextStyle(fontSize: 10, color: AppColors.gris)),
+            Text(
+              subtitle,
+              style: const TextStyle(fontSize: 10, color: AppColors.gris),
+            ),
           ],
         ),
       ),
@@ -329,7 +462,14 @@ class _ScreenHeader extends StatelessWidget {
           child: Icon(icon, size: 18, color: AppColors.bleu),
         ),
         const SizedBox(width: 12),
-        Text(title, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: AppColors.bleu)),
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            color: AppColors.bleu,
+          ),
+        ),
       ],
     ),
   );

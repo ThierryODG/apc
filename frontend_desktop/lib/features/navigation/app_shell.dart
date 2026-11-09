@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/state/auth_state.dart';
 import 'app_sidebar.dart';
 import '../secretary/presentation/secretary_pos_screen.dart';
@@ -14,6 +15,8 @@ import '../admin/presentation/admin_dashboard_screen.dart';
 import '../admin/presentation/company_settings_screen.dart';
 import '../admin/presentation/fiscal_years_screen.dart';
 import '../admin/presentation/users_screen.dart';
+import '../admin/presentation/catalog_screen.dart';
+import '../admin/presentation/settings_screen.dart';
 
 /// Shell principal de l'application.
 /// Compose : Sidebar (220px) | Zone principale (topbar + contenu routé)
@@ -78,6 +81,10 @@ class _AppShellState extends State<AppShell> {
         return const FiscalYearsScreen();
       case 'admin.users':
         return const UsersScreen();
+      case 'admin.catalog':
+        return const CatalogScreen();
+      case 'admin.settings':
+        return const SettingsScreen();
 
       default:
         return const Center(child: Text('Page introuvable.'));
@@ -93,7 +100,8 @@ class _AppShellState extends State<AppShell> {
             children: [
               AppSidebar(
                 selectedRoute: _currentRoute,
-                onRouteChanged: (route) => setState(() => _currentRoute = route),
+                onRouteChanged: (route) =>
+                    setState(() => _currentRoute = route),
               ),
               Expanded(child: _buildContent()),
             ],
@@ -118,4 +126,3 @@ class _AppShellState extends State<AppShell> {
     );
   }
 }
-

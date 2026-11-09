@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/constants/api_endpoints.dart';
@@ -77,11 +78,30 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
   Future<void> _loadKpi() async {
     try {
       final res = await ApiClient().get(ApiEndpoints.secretaryDashboard);
+      final summary = res['summary'] is Map
+          ? Map<String, dynamic>.from(res['summary'])
+          : <String, dynamic>{};
       setState(() {
-        _ventesCount = (res['today_orders_count'] ?? 0) as int;
-        _caDuJour = double.tryParse('${res['today_revenue'] ?? 0}') ?? 0;
-        _enProduction = (res['in_production_count'] ?? 0) as int;
-        _creances = double.tryParse('${res['total_receivables'] ?? 0}') ?? 0;
+        _ventesCount =
+            int.tryParse(
+              '${summary['today_tickets_count'] ?? res['today_orders_count'] ?? 0}',
+            ) ??
+            0;
+        _caDuJour =
+            double.tryParse(
+              '${summary['today_sales_total'] ?? res['today_revenue'] ?? 0}',
+            ) ??
+            0;
+        _enProduction =
+            int.tryParse(
+              '${summary['orders_in_progress'] ?? res['in_production_count'] ?? 0}',
+            ) ??
+            0;
+        _creances =
+            double.tryParse(
+              '${summary['unpaid_orders_count'] ?? res['total_receivables'] ?? 0}',
+            ) ??
+            0;
         _loadingKpi = false;
       });
     } catch (_) {
@@ -100,17 +120,42 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
 
   void _addProduct(Product product) {
     setState(() {
+      final defaultLength = product.defaultLength > 0
+          ? product.defaultLength
+          : 1.0;
+      final defaultWidth = product.defaultWidth > 0
+          ? product.defaultWidth
+          : 1.0;
+      final defaultArea = defaultLength * defaultWidth;
+
+      if (product.allowDimensions) {
+        _lines.add(
+          TicketLine(
+            productId: product.id,
+            productName: product.name,
+            unit: product.unit,
+            unitPrice: product.unitPrice,
+            quantity: defaultArea,
+            length: defaultLength,
+            width: defaultWidth,
+          ),
+        );
+        return;
+      }
+
       final idx = _lines.indexWhere((l) => l.productId == product.id);
       if (idx >= 0) {
         _lines[idx].quantity += 1.0;
       } else {
-        _lines.add(TicketLine(
-          productId: product.id,
-          productName: product.name,
-          unit: product.unit,
-          unitPrice: product.unitPrice,
-          quantity: 1.0,
-        ));
+        _lines.add(
+          TicketLine(
+            productId: product.id,
+            productName: product.name,
+            unit: product.unit,
+            unitPrice: product.unitPrice,
+            quantity: 1.0,
+          ),
+        );
       }
     });
   }
@@ -123,6 +168,20 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     setState(() => _lines[index].quantity = qty);
   }
 
+  void _updateLine(
+    int index, {
+    required double quantity,
+    double? length,
+    double? width,
+  }) {
+    setState(() {
+      final line = _lines[index];
+      line.quantity = quantity;
+      if (length != null) line.length = length;
+      if (width != null) line.width = width;
+    });
+  }
+
   void _cancelTicket() {
     setState(() {
       _lines.clear();
@@ -132,10 +191,64 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     });
   }
 
-  void _holdTicket() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ticket mis en attente.'), backgroundColor: AppColors.bleu),
-    );
+  Future<void> _holdTicket() async {
+    if (_lines.isEmpty) return;
+
+    try {
+      final orderLines = _lines
+          .map(
+            (l) => {
+              'product_id': l.productId,
+              'designation': l.productName,
+              'unit': l.unit,
+              'quantity': l.quantity,
+              'length': l.length > 0 ? l.length : null,
+              'width': l.width > 0 ? l.width : null,
+              'surface_area': l.length > 0 && l.width > 0
+                  ? l.length * l.width
+                  : l.quantity,
+              'unit_price': l.unitPrice,
+              'discount_amount': 0,
+            },
+          )
+          .toList();
+
+      final body = {
+        'customer_id': _selectedCustomer?.id,
+        'notes': 'Ticket enregistré en attente de paiement',
+        'items': orderLines,
+      };
+
+      final res = await ApiClient().post(ApiEndpoints.secretaryOrders, body);
+      final orderId = res['order']?['id'];
+
+      if (!mounted) return;
+      setState(() {
+        _lines.clear();
+        _selectedCustomer = null;
+        _discountAmount = 0;
+        _isPercentageDiscount = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            orderId != null
+                ? 'Ticket #$orderId mis en attente.'
+                : 'Ticket mis en attente.',
+          ),
+          backgroundColor: AppColors.bleu,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur enregistrement en attente : $e'),
+          backgroundColor: AppColors.rouge,
+        ),
+      );
+    }
   }
 
   void _openCheckout() {
@@ -146,7 +259,9 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
     if (_isPercentageDiscount) {
       discountCalculated = subTotal * (_discountAmount / 100);
     }
-    final total = (subTotal - discountCalculated) < 0 ? 0.0 : (subTotal - discountCalculated);
+    final total = (subTotal - discountCalculated) < 0
+        ? 0.0
+        : (subTotal - discountCalculated);
 
     showDialog(
       context: context,
@@ -156,21 +271,35 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
         customer: _selectedCustomer,
         lines: _lines,
         discountCalculated: discountCalculated,
-        onConfirm: (paymentMethod, amountReceived) => _confirmPayment(paymentMethod, amountReceived, total),
+        onConfirm: (paymentMethod, amountReceived) =>
+            _confirmPayment(paymentMethod, amountReceived, total),
       ),
     );
   }
 
-  Future<void> _confirmPayment(String method, double amountReceived, double total) async {
+  Future<void> _confirmPayment(
+    String method,
+    double amountReceived,
+    double total,
+  ) async {
     try {
-      final orderLines = _lines.map((l) => {
-        'product_id': l.productId,
-        'designation': l.productName,
-        'unit': l.unit,
-        'quantity': l.quantity,
-        'unit_price': l.unitPrice,
-        'discount_amount': 0,
-      }).toList();
+      final orderLines = _lines
+          .map(
+            (l) => {
+              'product_id': l.productId,
+              'designation': l.productName,
+              'unit': l.unit,
+              'quantity': l.quantity,
+              'length': l.length > 0 ? l.length : null,
+              'width': l.width > 0 ? l.width : null,
+              'surface_area': l.length > 0 && l.width > 0
+                  ? l.length * l.width
+                  : l.quantity,
+              'unit_price': l.unitPrice,
+              'discount_amount': 0,
+            },
+          )
+          .toList();
 
       final body = {
         'customer_id': _selectedCustomer?.id,
@@ -238,10 +367,13 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
             onSearchChanged: (q) {
               final query = q.toLowerCase();
               setState(() {
-                _filteredProducts = _allProducts.where((p) =>
-                  p.name.toLowerCase().contains(query) ||
-                  (p.code.toLowerCase().contains(query))
-                ).toList();
+                _filteredProducts = _allProducts
+                    .where(
+                      (p) =>
+                          p.name.toLowerCase().contains(query) ||
+                          (p.code.toLowerCase().contains(query)),
+                    )
+                    .toList();
               });
             },
           ),
@@ -251,44 +383,50 @@ class _SecretaryPosScreenState extends State<SecretaryPosScreen> {
             child: _loadingProducts
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.rouge)))
-                    : Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Catalogue produits (flex)
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(12),
-                              child: ProductCatalogPanel(
-                                categories: _categories,
-                                products: _filteredProducts,
-                                selectedCategoryId: _selectedCategoryId,
-                                onCategoryChanged: _filterByCategory,
-                                onProductTapped: _addProduct,
-                              ),
-                            ),
+                ? Center(
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: AppColors.rouge),
+                    ),
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // Catalogue produits (flex)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: ProductCatalogPanel(
+                            categories: _categories,
+                            products: _filteredProducts,
+                            selectedCategoryId: _selectedCategoryId,
+                            onCategoryChanged: _filterByCategory,
+                            onProductTapped: _addProduct,
                           ),
-                          // Ticket en cours (fixe 380px)
-                          LiveTicketPanel(
-                            lines: _lines,
-                            selectedCustomer: _selectedCustomer,
-                            discountAmount: _discountAmount,
-                            isPercentageDiscount: _isPercentageDiscount,
-                            onCancel: _cancelTicket,
-                            onHold: _holdTicket,
-                            onCheckout: _openCheckout,
-                            onSelectCustomer: _openSelectCustomer,
-                            onRemoveLine: _removeLine,
-                            onUpdateQuantity: _updateQuantity,
-                            onDiscountChanged: (amt, isPct) {
-                              setState(() {
-                                _discountAmount = amt;
-                                _isPercentageDiscount = isPct;
-                              });
-                            },
-                          ),
-                        ],
+                        ),
                       ),
+                      // Ticket en cours (fixe 380px)
+                      LiveTicketPanel(
+                        lines: _lines,
+                        selectedCustomer: _selectedCustomer,
+                        discountAmount: _discountAmount,
+                        isPercentageDiscount: _isPercentageDiscount,
+                        onCancel: _cancelTicket,
+                        onHold: _holdTicket,
+                        onCheckout: _openCheckout,
+                        onSelectCustomer: _openSelectCustomer,
+                        onRemoveLine: _removeLine,
+                        onUpdateQuantity: _updateQuantity,
+                        onUpdateLine: _updateLine,
+                        onDiscountChanged: (amt, isPct) {
+                          setState(() {
+                            _discountAmount = amt;
+                            _isPercentageDiscount = isPct;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
           ),
 
           // KPI strip en bas
@@ -333,12 +471,17 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
   final _amountCtrl = TextEditingController();
   bool _isLoading = false;
 
-  double get _amountReceived => double.tryParse(_amountCtrl.text.replaceAll(' ', '').replaceAll(',', '.')) ?? 0;
+  double get _amountReceived =>
+      double.tryParse(
+        _amountCtrl.text.replaceAll(' ', '').replaceAll(',', '.'),
+      ) ??
+      0;
   double get _change => _amountReceived - widget.total;
 
   String _fmt(double v) {
     final n = v.toInt();
-    if (n >= 1000) return '${n ~/ 1000} ${(n % 1000).toString().padLeft(3, '0')} FCFA';
+    if (n >= 1000)
+      return '${n ~/ 1000} ${(n % 1000).toString().padLeft(3, '0')} FCFA';
     return '$n FCFA';
   }
 
@@ -367,16 +510,28 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.payments_rounded, color: Colors.white, size: 20),
+                  const Icon(
+                    Icons.payments_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                   const SizedBox(width: 10),
                   const Text(
                     'ENCAISSEMENT VENTE',
-                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w900),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                   const Spacer(),
                   Text(
                     _fmt(widget.total),
-                    style: const TextStyle(color: AppColors.orange, fontSize: 18, fontWeight: FontWeight.w900),
+                    style: const TextStyle(
+                      color: AppColors.orange,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ],
               ),
@@ -389,45 +544,101 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                 children: [
                   // Résumé
                   if (widget.customer != null)
-                    Text('Client : ${widget.customer!.name}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.texte, fontWeight: FontWeight.w700)),
-                  Text('${widget.lines.length} article(s) / dimension(s) saisis',
-                      style: const TextStyle(fontSize: 12, color: AppColors.gris)),
+                    Text(
+                      'Client : ${widget.customer!.name}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.texte,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  Text(
+                    '${widget.lines.length} article(s) / dimension(s) saisis',
+                    style: const TextStyle(fontSize: 12, color: AppColors.gris),
+                  ),
                   if (widget.discountCalculated > 0)
-                    Text('Remise déduite : ${_fmt(widget.discountCalculated)}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.rouge, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Remise déduite : ${_fmt(widget.discountCalculated)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.rouge,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   const SizedBox(height: 18),
 
                   // Mode de paiement
-                  const Text('Mode de règlement :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.bleu)),
+                  const Text(
+                    'Mode de règlement :',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.bleu,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: [
-                      _PayMethodChip(label: 'Espèces', icon: Icons.money_rounded, value: 'cash', selected: _method == 'cash',
-                          onTap: () => setState(() => _method = 'cash')),
-                      _PayMethodChip(label: 'Mobile Money', icon: Icons.phone_android_rounded, value: 'mobile_money', selected: _method == 'mobile_money',
-                          onTap: () => setState(() => _method = 'mobile_money')),
-                      _PayMethodChip(label: 'Virement', icon: Icons.account_balance_rounded, value: 'bank_transfer', selected: _method == 'bank_transfer',
-                          onTap: () => setState(() => _method = 'bank_transfer')),
-                      _PayMethodChip(label: 'Chèque', icon: Icons.description_outlined, value: 'check', selected: _method == 'check',
-                          onTap: () => setState(() => _method = 'check')),
+                      _PayMethodChip(
+                        label: 'Espèces',
+                        icon: Icons.money_rounded,
+                        value: 'cash',
+                        selected: _method == 'cash',
+                        onTap: () => setState(() => _method = 'cash'),
+                      ),
+                      _PayMethodChip(
+                        label: 'Mobile Money',
+                        icon: Icons.phone_android_rounded,
+                        value: 'mobile_money',
+                        selected: _method == 'mobile_money',
+                        onTap: () => setState(() => _method = 'mobile_money'),
+                      ),
+                      _PayMethodChip(
+                        label: 'Virement',
+                        icon: Icons.account_balance_rounded,
+                        value: 'bank_transfer',
+                        selected: _method == 'bank_transfer',
+                        onTap: () => setState(() => _method = 'bank_transfer'),
+                      ),
+                      _PayMethodChip(
+                        label: 'Chèque',
+                        icon: Icons.description_outlined,
+                        value: 'check',
+                        selected: _method == 'check',
+                        onTap: () => setState(() => _method = 'check'),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 18),
 
                   // Montant reçu
                   if (_method == 'cash') ...[
-                    const Text('Montant reçu du client (FCFA) :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.bleu)),
+                    const Text(
+                      'Montant reçu du client (FCFA) :',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.bleu,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     TextField(
                       controller: _amountCtrl,
                       keyboardType: TextInputType.number,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
                       decoration: InputDecoration(
                         suffixText: 'FCFA',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 12,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -437,15 +648,24 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                         decoration: BoxDecoration(
                           color: AppColors.vert.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.vert.withOpacity(0.3)),
+                          border: Border.all(
+                            color: AppColors.vert.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Monnaie à rendre :', style: TextStyle(fontWeight: FontWeight.w700)),
+                            const Text(
+                              'Monnaie à rendre :',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
                             Text(
                               _fmt(_change),
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.vert),
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.vert,
+                              ),
                             ),
                           ],
                         ),
@@ -456,15 +676,27 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                         decoration: BoxDecoration(
                           color: AppColors.rouge.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.rouge.withOpacity(0.3)),
+                          border: Border.all(
+                            color: AppColors.rouge.withOpacity(0.3),
+                          ),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text('Reste dû (Créance) :', style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.rouge)),
+                            const Text(
+                              'Reste dû (Créance) :',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.rouge,
+                              ),
+                            ),
                             Text(
                               _fmt(widget.total - _amountReceived),
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: AppColors.rouge),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.rouge,
+                              ),
                             ),
                           ],
                         ),
@@ -485,7 +717,9 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.gris,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                       child: const Text('Annuler'),
                     ),
@@ -500,18 +734,32 @@ class _CheckoutDialogState extends State<_CheckoutDialog> {
                               setState(() => _isLoading = true);
                               widget.onConfirm(
                                 _method,
-                                _method == 'cash' ? _amountReceived : widget.total,
+                                _method == 'cash'
+                                    ? _amountReceived
+                                    : widget.total,
                               );
                             },
                       icon: _isLoading
-                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
                           : const Icon(Icons.print_rounded, size: 16),
-                      label: const Text('VALIDER & ÉMETTRE REÇU', style: TextStyle(fontWeight: FontWeight.w900)),
+                      label: const Text(
+                        'VALIDER & ÉMETTRE REÇU',
+                        style: TextStyle(fontWeight: FontWeight.w900),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.vert,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
                       ),
                     ),
                   ),
@@ -555,7 +803,11 @@ class _PayMethodChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 15, color: selected ? Colors.white : AppColors.gris),
+            Icon(
+              icon,
+              size: 15,
+              color: selected ? Colors.white : AppColors.gris,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
@@ -594,10 +846,13 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
     _searchCtrl.addListener(() {
       final q = _searchCtrl.text.toLowerCase();
       setState(() {
-        _filtered = _customers.where((c) =>
-          c.name.toLowerCase().contains(q) ||
-          (c.phone ?? '').contains(q)
-        ).toList();
+        _filtered = _customers
+            .where(
+              (c) =>
+                  c.name.toLowerCase().contains(q) ||
+                  (c.phone ?? '').contains(q),
+            )
+            .toList();
       });
     });
   }
@@ -607,7 +862,9 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
       final res = await ApiClient().get(ApiEndpoints.secretaryCustomers);
       final list = ApiClient.extractList(res, 'customers');
       setState(() {
-        _customers = list.map((c) => Customer.fromJson(c as Map<String, dynamic>)).toList();
+        _customers = list
+            .map((c) => Customer.fromJson(c as Map<String, dynamic>))
+            .toList();
         _filtered = List.from(_customers);
         _loading = false;
       });
@@ -633,12 +890,27 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.people_alt_rounded, color: Colors.white, size: 18),
+                  const Icon(
+                    Icons.people_alt_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
-                  const Text('Sélectionner un client', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 14)),
+                  const Text(
+                    'Sélectionner un client',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white, size: 16),
+                    icon: const Icon(
+                      Icons.close,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                     onPressed: () => Navigator.pop(context),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
@@ -653,8 +925,13 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
                 decoration: InputDecoration(
                   hintText: 'Rechercher par nom, téléphone ou code…',
                   prefixIcon: const Icon(Icons.search_rounded, size: 18),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(6),
+                  ),
                 ),
               ),
             ),
@@ -662,27 +939,48 @@ class _CustomerPickerDialogState extends State<_CustomerPickerDialog> {
               child: _loading
                   ? const Center(child: CircularProgressIndicator())
                   : _filtered.isEmpty
-                      ? const Center(child: Text('Aucun client trouvé', style: TextStyle(color: AppColors.gris, fontSize: 12)))
-                      : ListView.builder(
-                          itemCount: _filtered.length,
-                          itemBuilder: (_, i) {
-                            final c = _filtered[i];
-                            return ListTile(
-                              dense: true,
-                              leading: CircleAvatar(
-                                backgroundColor: AppColors.bleu.withOpacity(0.1),
-                                radius: 16,
-                                child: Text(
-                                  c.name.substring(0, 1).toUpperCase(),
-                                  style: const TextStyle(color: AppColors.bleu, fontSize: 12, fontWeight: FontWeight.w900),
-                                ),
+                  ? const Center(
+                      child: Text(
+                        'Aucun client trouvé',
+                        style: TextStyle(color: AppColors.gris, fontSize: 12),
+                      ),
+                    )
+                  : ListView.builder(
+                      itemCount: _filtered.length,
+                      itemBuilder: (_, i) {
+                        final c = _filtered[i];
+                        return ListTile(
+                          dense: true,
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.bleu.withOpacity(0.1),
+                            radius: 16,
+                            child: Text(
+                              c.name.substring(0, 1).toUpperCase(),
+                              style: const TextStyle(
+                                color: AppColors.bleu,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w900,
                               ),
-                              title: Text(c.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
-                              subtitle: Text('${c.code} ${c.phone != null ? '• ${c.phone}' : ''}', style: const TextStyle(fontSize: 11, color: AppColors.gris)),
-                              onTap: () => Navigator.pop(context, c),
-                            );
-                          },
-                        ),
+                            ),
+                          ),
+                          title: Text(
+                            c.name,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          subtitle: Text(
+                            '${c.code} ${c.phone != null ? '• ${c.phone}' : ''}',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.gris,
+                            ),
+                          ),
+                          onTap: () => Navigator.pop(context, c),
+                        );
+                      },
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(12),

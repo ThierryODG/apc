@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../core/constants/app_colors.dart';
 import '../../core/state/auth_state.dart';
 
@@ -33,27 +34,87 @@ class _AppSidebarState extends State<AppSidebar> {
     switch (role) {
       case 'secretary':
         return const [
-          NavItem(icon: Icons.point_of_sale_rounded, label: 'Caisse (POS)', route: 'secretary.pos'),
-          NavItem(icon: Icons.receipt_long_rounded, label: 'Commandes', route: 'secretary.orders'),
-          NavItem(icon: Icons.people_alt_rounded, label: 'Clients', route: 'secretary.customers'),
-          NavItem(icon: Icons.request_quote_rounded, label: 'Devis / Demandes', route: 'secretary.inquiries'),
+          NavItem(
+            icon: Icons.point_of_sale_rounded,
+            label: 'Caisse (POS)',
+            route: 'secretary.pos',
+          ),
+          NavItem(
+            icon: Icons.receipt_long_rounded,
+            label: 'Commandes',
+            route: 'secretary.orders',
+          ),
+          NavItem(
+            icon: Icons.people_alt_rounded,
+            label: 'Clients',
+            route: 'secretary.customers',
+          ),
+          NavItem(
+            icon: Icons.request_quote_rounded,
+            label: 'Devis / Demandes',
+            route: 'secretary.inquiries',
+          ),
         ];
       case 'accounting':
         return const [
-          NavItem(icon: Icons.analytics_outlined, label: 'Tableau de bord', route: 'accounting.dashboard'),
-          NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Journal Trésorerie', route: 'accounting.cashflows'),
-          NavItem(icon: Icons.inventory_2_outlined, label: 'Consommables & Stocks', route: 'accounting.expenses'),
-          NavItem(icon: Icons.pending_actions_rounded, label: 'Créances clients', route: 'accounting.receivables'),
-          NavItem(icon: Icons.lock_clock_rounded, label: 'Clôture de caisse (Z)', route: 'accounting.daily_register'),
+          NavItem(
+            icon: Icons.analytics_outlined,
+            label: 'Tableau de bord',
+            route: 'accounting.dashboard',
+          ),
+          NavItem(
+            icon: Icons.account_balance_wallet_rounded,
+            label: 'Journal Trésorerie',
+            route: 'accounting.cashflows',
+          ),
+          NavItem(
+            icon: Icons.inventory_2_outlined,
+            label: 'Consommables & Stocks',
+            route: 'accounting.expenses',
+          ),
+          NavItem(
+            icon: Icons.pending_actions_rounded,
+            label: 'Créances clients',
+            route: 'accounting.receivables',
+          ),
+          NavItem(
+            icon: Icons.lock_clock_rounded,
+            label: 'Clôture de caisse (Z)',
+            route: 'accounting.daily_register',
+          ),
         ];
       case 'admin':
         return const [
-          NavItem(icon: Icons.dashboard_outlined, label: 'Tableau de bord', route: 'admin.dashboard'),
-          NavItem(icon: Icons.business_rounded, label: 'Fiche Entreprise', route: 'admin.company'),
-          NavItem(icon: Icons.calendar_month_rounded, label: 'Exercices fiscaux', route: 'admin.fiscal_years'),
-          NavItem(icon: Icons.manage_accounts_rounded, label: 'Utilisateurs & Droits', route: 'admin.users'),
-          NavItem(icon: Icons.point_of_sale_rounded, label: 'Caisse (POS)', route: 'secretary.pos'),
-          NavItem(icon: Icons.account_balance_wallet_rounded, label: 'Trésorerie', route: 'accounting.cashflows'),
+          NavItem(
+            icon: Icons.dashboard_outlined,
+            label: 'Tableau de bord',
+            route: 'admin.dashboard',
+          ),
+          NavItem(
+            icon: Icons.business_rounded,
+            label: 'Fiche Entreprise',
+            route: 'admin.company',
+          ),
+          NavItem(
+            icon: Icons.calendar_month_rounded,
+            label: 'Exercices fiscaux',
+            route: 'admin.fiscal_years',
+          ),
+          NavItem(
+            icon: Icons.manage_accounts_rounded,
+            label: 'Utilisateurs & Droits',
+            route: 'admin.users',
+          ),
+          NavItem(
+            icon: Icons.settings_rounded,
+            label: 'Paramètres',
+            route: 'admin.settings',
+          ),
+          NavItem(
+            icon: Icons.inventory_2_outlined,
+            label: 'Catalogue',
+            route: 'admin.catalog',
+          ),
         ];
       default:
         return const [];
@@ -71,7 +132,7 @@ class _AppSidebarState extends State<AppSidebar> {
       curve: Curves.easeInOut,
       width: _isCollapsed ? 74 : 224,
       decoration: const BoxDecoration(
-        color: Color(0xFF072747),
+        color: Color.fromARGB(255, 1, 3, 113),
         border: Border(right: BorderSide(color: Color(0x1AFFFFFF))),
       ),
       child: Column(
@@ -87,25 +148,35 @@ class _AppSidebarState extends State<AppSidebar> {
               children: [
                 Expanded(
                   child: Align(
-                    alignment: _isCollapsed ? Alignment.center : Alignment.centerLeft,
+                    alignment: _isCollapsed
+                        ? Alignment.center
+                        : Alignment.centerLeft,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(6),
                       child: Image.asset(
-                        'assets/brand/logo.png',
+                        'assets/logoneg.png',
                         height: 40,
                         fit: BoxFit.contain,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.print_rounded, color: Colors.white, size: 28),
+                        errorBuilder: (_, __, ___) => const Icon(
+                          Icons.print_rounded,
+                          color: Colors.white,
+                          size: 28,
+                        ),
                       ),
                     ),
                   ),
                 ),
                 IconButton(
                   icon: Icon(
-                    _isCollapsed ? Icons.chevron_right_rounded : Icons.chevron_left_rounded,
+                    _isCollapsed
+                        ? Icons.chevron_right_rounded
+                        : Icons.chevron_left_rounded,
                     color: Colors.white70,
                     size: 20,
                   ),
-                  tooltip: _isCollapsed ? 'Agrandir le menu' : 'Réduire le menu',
+                  tooltip: _isCollapsed
+                      ? 'Agrandir le menu'
+                      : 'Réduire le menu',
                   onPressed: () => setState(() => _isCollapsed = !_isCollapsed),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -118,12 +189,16 @@ class _AppSidebarState extends State<AppSidebar> {
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-              children: items.map((item) => _NavTile(
-                item: item,
-                isCollapsed: _isCollapsed,
-                isSelected: widget.selectedRoute == item.route,
-                onTap: () => widget.onRouteChanged(item.route),
-              )).toList(),
+              children: items
+                  .map(
+                    (item) => _NavTile(
+                      item: item,
+                      isCollapsed: _isCollapsed,
+                      isSelected: widget.selectedRoute == item.route,
+                      onTap: () => widget.onRouteChanged(item.route),
+                    ),
+                  )
+                  .toList(),
             ),
           ),
 
@@ -131,11 +206,13 @@ class _AppSidebarState extends State<AppSidebar> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: const BoxDecoration(
-              color: Color(0xFF051C33),
+              color: Color.fromARGB(255, 7, 51, 5),
               border: Border(top: BorderSide(color: Color(0x1AFFFFFF))),
             ),
             child: Row(
-              mainAxisAlignment: _isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: _isCollapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 Container(
                   width: 32,
@@ -146,8 +223,14 @@ class _AppSidebarState extends State<AppSidebar> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    (auth.currentUser?.name ?? 'U').substring(0, 1).toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                    (auth.currentUser?.name ?? 'U')
+                        .substring(0, 1)
+                        .toUpperCase(),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
                 if (!_isCollapsed) ...[
@@ -158,19 +241,31 @@ class _AppSidebarState extends State<AppSidebar> {
                       children: [
                         Text(
                           auth.currentUser?.name ?? '',
-                          style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           _roleLabel(role),
-                          style: const TextStyle(color: Color(0xB3FFFFFF), fontSize: 10, fontWeight: FontWeight.w500),
+                          style: const TextStyle(
+                            color: Color(0xB3FFFFFF),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.logout_rounded, size: 17, color: Color(0xAAFFFFFF)),
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      size: 17,
+                      color: Color(0xAAFFFFFF),
+                    ),
                     tooltip: 'Déconnexion',
                     onPressed: () => auth.logout(),
                     padding: EdgeInsets.zero,
@@ -241,12 +336,14 @@ class _NavTileState extends State<_NavTile> {
               color: active
                   ? Colors.white.withOpacity(0.14)
                   : _hovered
-                      ? Colors.white.withOpacity(0.06)
-                      : Colors.transparent,
+                  ? Colors.white.withOpacity(0.06)
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(
-              mainAxisAlignment: widget.isCollapsed ? MainAxisAlignment.center : MainAxisAlignment.start,
+              mainAxisAlignment: widget.isCollapsed
+                  ? MainAxisAlignment.center
+                  : MainAxisAlignment.start,
               children: [
                 Icon(
                   widget.item.icon,

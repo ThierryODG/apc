@@ -1,4 +1,5 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 class ApiException implements Exception {
@@ -44,7 +45,10 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> post(String url, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> post(
+    String url,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse(url),
@@ -58,7 +62,10 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> put(String url, Map<String, dynamic> body) async {
+  Future<Map<String, dynamic>> put(
+    String url,
+    Map<String, dynamic> body,
+  ) async {
     try {
       final response = await http.put(
         Uri.parse(url),
@@ -72,13 +79,26 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> patch(String url, [Map<String, dynamic>? body]) async {
+  Future<Map<String, dynamic>> patch(
+    String url, [
+    Map<String, dynamic>? body,
+  ]) async {
     try {
       final response = await http.patch(
         Uri.parse(url),
         headers: _headers(),
         body: body != null ? jsonEncode(body) : null,
       );
+      return _handleResponse(response);
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException('Erreur de communication : $e');
+    }
+  }
+
+  Future<Map<String, dynamic>> delete(String url) async {
+    try {
+      final response = await http.delete(Uri.parse(url), headers: _headers());
       return _handleResponse(response);
     } catch (e) {
       if (e is ApiException) rethrow;
@@ -108,9 +128,20 @@ class ApiClient {
       }
 
       // 3. Chercher dans les clés connues courantes
-      for (final k in ['customers', 'orders', 'expenses', 'cash_flows', 'payments', 'users', 'inquiries', 'products', 'fiscal_years']) {
+      for (final k in [
+        'customers',
+        'orders',
+        'expenses',
+        'cash_flows',
+        'payments',
+        'users',
+        'inquiries',
+        'products',
+        'fiscal_years',
+      ]) {
         if (response[k] is List) return response[k] as List;
-        if (response[k] is Map<String, dynamic> && response[k]['data'] is List) {
+        if (response[k] is Map<String, dynamic> &&
+            response[k]['data'] is List) {
           return response[k]['data'] as List;
         }
       }
@@ -141,13 +172,19 @@ class ApiClient {
       }
       if (data['errors'] != null && data['errors'] is Map) {
         final errorMap = data['errors'] as Map;
-        final details = errorMap.values.expand((e) => e is List ? e : [e]).join('\n');
+        final details = errorMap.values
+            .expand((e) => e is List ? e : [e])
+            .join('\n');
         if (details.isNotEmpty) {
           message = '$message\n$details';
         }
       }
     }
 
-    throw ApiException(message, statusCode: response.statusCode, errors: data is Map ? data['errors'] : null);
+    throw ApiException(
+      message,
+      statusCode: response.statusCode,
+      errors: data is Map ? data['errors'] : null,
+    );
   }
 }

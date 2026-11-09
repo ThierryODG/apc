@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FiscalYearController;
+use App\Http\Controllers\Admin\ProductCatalogController;
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,5 +33,14 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users', [UserController::class, 'store']);
     Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActive']);
+
+    // Gestion du catalogue produits & prestations
+    Route::get('/catalog', [ProductCatalogController::class, 'index']);
+    Route::post('/catalog/categories', [ProductCatalogController::class, 'storeCategory']);
+    Route::put('/catalog/categories/{category}', [ProductCatalogController::class, 'updateCategory']);
+    Route::delete('/catalog/categories/{category}', [ProductCatalogController::class, 'destroyCategory']);
+    Route::post('/catalog/products', [ProductCatalogController::class, 'storeProduct']);
+    Route::put('/catalog/products/{product}', [ProductCatalogController::class, 'updateProduct']);
+    Route::delete('/catalog/products/{product}', [ProductCatalogController::class, 'destroyProduct']);
 });
 

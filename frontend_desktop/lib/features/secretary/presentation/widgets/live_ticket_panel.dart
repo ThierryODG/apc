@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../models/customer.dart';
 
@@ -14,6 +15,13 @@ class LiveTicketPanel extends StatefulWidget {
   final VoidCallback onSelectCustomer;
   final Function(int index) onRemoveLine;
   final Function(int index, double quantity) onUpdateQuantity;
+  final Function(
+    int index, {
+    required double quantity,
+    double? length,
+    double? width,
+  })
+  onUpdateLine;
   final Function(double amount, bool isPercent) onDiscountChanged;
 
   const LiveTicketPanel({
@@ -28,6 +36,7 @@ class LiveTicketPanel extends StatefulWidget {
     required this.onSelectCustomer,
     required this.onRemoveLine,
     required this.onUpdateQuantity,
+    required this.onUpdateLine,
     required this.onDiscountChanged,
   });
 
@@ -42,10 +51,14 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
     if (widget.isPercentageDiscount) {
       return _subTotal * (widget.discountAmount / 100);
     }
-    return widget.discountAmount > _subTotal ? _subTotal : widget.discountAmount;
+    return widget.discountAmount > _subTotal
+        ? _subTotal
+        : widget.discountAmount;
   }
 
-  double get _total => (_subTotal - _discountCalculated) < 0 ? 0 : (_subTotal - _discountCalculated);
+  double get _total => (_subTotal - _discountCalculated) < 0
+      ? 0
+      : (_subTotal - _discountCalculated);
 
   String _fmt(double v) {
     final n = v.toInt();
@@ -68,8 +81,8 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
     final ctrl = TextEditingController(
       text: widget.discountAmount > 0
           ? (widget.discountAmount == widget.discountAmount.toInt()
-              ? widget.discountAmount.toInt().toString()
-              : widget.discountAmount.toString())
+                ? widget.discountAmount.toInt().toString()
+                : widget.discountAmount.toString())
           : '',
     );
     bool isPercent = widget.isPercentageDiscount;
@@ -78,12 +91,17 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDlgState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: const Row(
             children: [
               Icon(Icons.discount_outlined, color: AppColors.orange, size: 20),
               SizedBox(width: 8),
-              Text('Remise personnalisée', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+              Text(
+                'Remise personnalisée',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+              ),
             ],
           ),
           content: Column(
@@ -112,10 +130,14 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
               const SizedBox(height: 16),
               TextField(
                 controller: ctrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: isPercent ? 'Pourcentage de remise (%)' : 'Montant de remise (FCFA)',
+                  labelText: isPercent
+                      ? 'Pourcentage de remise (%)'
+                      : 'Montant de remise (FCFA)',
                   suffixText: isPercent ? '%' : 'FCFA',
                 ),
               ),
@@ -127,11 +149,16 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                 widget.onDiscountChanged(0, false);
                 Navigator.pop(ctx);
               },
-              child: const Text('Supprimer remise', style: TextStyle(color: AppColors.rouge)),
+              child: const Text(
+                'Supprimer remise',
+                style: TextStyle(color: AppColors.rouge),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
-                final val = double.tryParse(ctrl.text.replaceAll(',', '.').trim()) ?? 0.0;
+                final val =
+                    double.tryParse(ctrl.text.replaceAll(',', '.').trim()) ??
+                    0.0;
                 widget.onDiscountChanged(val, isPercent);
                 Navigator.pop(ctx);
               },
@@ -145,13 +172,18 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
 
   void _openQuantityOrDimensionDialog(int index) {
     final line = widget.lines[index];
-    final ctrl = TextEditingController(
+    final isArea = line.isDimensionLine;
+    final areaCtrl = TextEditingController(
       text: line.quantity == line.quantity.toInt()
           ? line.quantity.toInt().toString()
           : line.quantity.toString(),
     );
-
-    final isArea = line.unit.toLowerCase().contains('m²') || line.unit.toLowerCase().contains('m2');
+    final lengthCtrl = TextEditingController(
+      text: line.length > 0 ? line.length.toString() : '',
+    );
+    final widthCtrl = TextEditingController(
+      text: line.width > 0 ? line.width.toString() : '',
+    );
 
     showDialog(
       context: context,
@@ -159,12 +191,21 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: Row(
           children: [
-            Icon(isArea ? Icons.aspect_ratio_rounded : Icons.edit_note_rounded, color: AppColors.bleu, size: 20),
+            Icon(
+              isArea ? Icons.aspect_ratio_rounded : Icons.edit_note_rounded,
+              color: AppColors.bleu,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                isArea ? 'Dimension / Surface (${line.productName})' : 'Quantité (${line.productName})',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+                isArea
+                    ? 'Dimension / Surface (${line.productName})'
+                    : 'Quantité (${line.productName})',
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                ),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -176,21 +217,105 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
           children: [
             Text(
               isArea
-                  ? 'Saisissez la dimension en mètres carrés (m²) ex: 2.5 ou 16.75 :'
+                  ? 'Saisissez la dimension de la prestation (longueur / largeur) :'
                   : 'Saisissez la quantité exacte (${line.unit}) :',
               style: const TextStyle(fontSize: 12, color: AppColors.gris),
             ),
             const SizedBox(height: 12),
-            TextField(
-              controller: ctrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              autofocus: true,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              decoration: InputDecoration(
-                suffixText: line.unit,
-                hintText: isArea ? 'Ex: 2.5' : 'Ex: 10',
+            if (isArea) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: lengthCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Longueur (m)',
+                        hintText: 'Ex: 2.5',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: widthCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      decoration: const InputDecoration(
+                        labelText: 'Largeur (m)',
+                        hintText: 'Ex: 1.2',
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.orange.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppColors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Surface calculée',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.orange2,
+                      ),
+                    ),
+                    Builder(
+                      builder: (_) {
+                        final length =
+                            double.tryParse(
+                              lengthCtrl.text.replaceAll(',', '.'),
+                            ) ??
+                            0.0;
+                        final width =
+                            double.tryParse(
+                              widthCtrl.text.replaceAll(',', '.'),
+                            ) ??
+                            0.0;
+                        final calc = length > 0 && width > 0
+                            ? length * width
+                            : 0.0;
+                        return Text(
+                          '${calc.toStringAsFixed(2)} m²',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.orange2,
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ] else
+              TextField(
+                controller: areaCtrl,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                autofocus: true,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+                decoration: InputDecoration(
+                  suffixText: line.unit,
+                  hintText: 'Ex: 10',
+                ),
+              ),
           ],
         ),
         actions: [
@@ -200,9 +325,35 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
           ),
           ElevatedButton(
             onPressed: () {
-              final val = double.tryParse(ctrl.text.replaceAll(',', '.').trim()) ?? 1.0;
-              if (val > 0) {
-                widget.onUpdateQuantity(index, val);
+              if (isArea) {
+                final length =
+                    double.tryParse(
+                      lengthCtrl.text.replaceAll(',', '.').trim(),
+                    ) ??
+                    0.0;
+                final width =
+                    double.tryParse(
+                      widthCtrl.text.replaceAll(',', '.').trim(),
+                    ) ??
+                    0.0;
+                final area = length > 0 && width > 0 ? length * width : 0.0;
+                if (area > 0) {
+                  widget.onUpdateLine(
+                    index,
+                    quantity: area,
+                    length: length,
+                    width: width,
+                  );
+                }
+              } else {
+                final val =
+                    double.tryParse(
+                      areaCtrl.text.replaceAll(',', '.').trim(),
+                    ) ??
+                    1.0;
+                if (val > 0) {
+                  widget.onUpdateQuantity(index, val);
+                }
               }
               Navigator.pop(ctx);
             },
@@ -232,22 +383,38 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.receipt_long_rounded, color: Colors.white, size: 18),
+                const Icon(
+                  Icons.receipt_long_rounded,
+                  color: Colors.white,
+                  size: 18,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'TICKET EN COURS',
-                  style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
                     '${widget.lines.length} art.',
-                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -269,13 +436,19 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                     width: 28,
                     height: 28,
                     decoration: BoxDecoration(
-                      color: (widget.selectedCustomer != null ? AppColors.vert : AppColors.gris).withOpacity(0.12),
+                      color:
+                          (widget.selectedCustomer != null
+                                  ? AppColors.vert
+                                  : AppColors.gris)
+                              .withOpacity(0.12),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       Icons.person_rounded,
                       size: 16,
-                      color: widget.selectedCustomer != null ? AppColors.vert : AppColors.gris,
+                      color: widget.selectedCustomer != null
+                          ? AppColors.vert
+                          : AppColors.gris,
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -284,11 +457,14 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.selectedCustomer?.name ?? 'Client Comptoir (Par défaut)',
+                          widget.selectedCustomer?.name ??
+                              'Client Comptoir (Par défaut)',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
-                            color: widget.selectedCustomer != null ? AppColors.bleu : AppColors.texte,
+                            color: widget.selectedCustomer != null
+                                ? AppColors.bleu
+                                : AppColors.texte,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -296,19 +472,32 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                         if (widget.selectedCustomer?.phone != null)
                           Text(
                             widget.selectedCustomer!.phone!,
-                            style: const TextStyle(fontSize: 10, color: AppColors.gris),
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.gris,
+                            ),
                           ),
                       ],
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.fond,
                       borderRadius: BorderRadius.circular(4),
                       border: Border.all(color: AppColors.bord),
                     ),
-                    child: const Text('Changer', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.bleu)),
+                    child: const Text(
+                      'Changer',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.bleu,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -329,10 +518,21 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                             color: AppColors.fond,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.shopping_bag_outlined, size: 28, color: AppColors.gris),
+                          child: const Icon(
+                            Icons.shopping_bag_outlined,
+                            size: 28,
+                            color: AppColors.gris,
+                          ),
                         ),
                         const SizedBox(height: 12),
-                        const Text('Le panier est vide', style: TextStyle(color: AppColors.texte, fontSize: 13, fontWeight: FontWeight.w700)),
+                        const Text(
+                          'Le panier est vide',
+                          style: TextStyle(
+                            color: AppColors.texte,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                         const SizedBox(height: 4),
                         const Text(
                           'Cliquez sur une prestation à gauche\npour l\'ajouter au ticket.',
@@ -345,7 +545,8 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                 : ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     itemCount: widget.lines.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1, color: AppColors.bord),
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: AppColors.bord),
                     itemBuilder: (context, i) => _TicketLineRow(
                       line: widget.lines[i],
                       onRemove: () => widget.onRemoveLine(i),
@@ -353,7 +554,12 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                       onQuickStep: (delta) {
                         final newQty = widget.lines[i].quantity + delta;
                         if (newQty > 0) {
-                          widget.onUpdateQuantity(i, newQty);
+                          widget.onUpdateLine(
+                            i,
+                            quantity: newQty,
+                            length: widget.lines[i].length,
+                            width: widget.lines[i].width,
+                          );
                         } else {
                           widget.onRemoveLine(i);
                         }
@@ -371,21 +577,39 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.sell_outlined, size: 14, color: AppColors.gris),
+                const Icon(
+                  Icons.sell_outlined,
+                  size: 14,
+                  color: AppColors.gris,
+                ),
                 const SizedBox(width: 6),
-                const Text('Remise :', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.gris)),
+                const Text(
+                  'Remise :',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.gris,
+                  ),
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: InkWell(
                     onTap: _openCustomDiscountDialog,
                     borderRadius: BorderRadius.circular(4),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
-                        color: widget.discountAmount > 0 ? AppColors.orange.withOpacity(0.1) : AppColors.fond,
+                        color: widget.discountAmount > 0
+                            ? AppColors.orange.withOpacity(0.1)
+                            : AppColors.fond,
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: widget.discountAmount > 0 ? AppColors.orange : AppColors.bord,
+                          color: widget.discountAmount > 0
+                              ? AppColors.orange
+                              : AppColors.bord,
                         ),
                       ),
                       child: Row(
@@ -394,16 +618,22 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                           Text(
                             widget.discountAmount > 0
                                 ? (widget.isPercentageDiscount
-                                    ? '${widget.discountAmount}% (- ${_fmt(_discountCalculated)})'
-                                    : '- ${_fmt(widget.discountAmount)}')
+                                      ? '${widget.discountAmount}% (- ${_fmt(_discountCalculated)})'
+                                      : '- ${_fmt(widget.discountAmount)}')
                                 : 'Aucune remise (cliquer pour définir)',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
-                              color: widget.discountAmount > 0 ? AppColors.orange : AppColors.gris,
+                              color: widget.discountAmount > 0
+                                  ? AppColors.orange
+                                  : AppColors.gris,
                             ),
                           ),
-                          const Icon(Icons.edit_outlined, size: 13, color: AppColors.gris),
+                          const Icon(
+                            Icons.edit_outlined,
+                            size: 13,
+                            color: AppColors.gris,
+                          ),
                         ],
                       ),
                     ),
@@ -435,10 +665,21 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('TOTAL À PAYER', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: AppColors.bleu)),
+                    const Text(
+                      'TOTAL À PAYER',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.bleu,
+                      ),
+                    ),
                     Text(
                       _fmt(_total),
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: AppColors.bleu),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.bleu,
+                      ),
                     ),
                   ],
                 ),
@@ -459,14 +700,21 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                   children: [
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: widget.lines.isEmpty ? null : widget.onCancel,
+                        onPressed: widget.lines.isEmpty
+                            ? null
+                            : widget.onCancel,
                         icon: const Icon(Icons.delete_sweep_outlined, size: 16),
-                        label: const Text('Vider le ticket', style: TextStyle(fontSize: 11)),
+                        label: const Text(
+                          'Vider le ticket',
+                          style: TextStyle(fontSize: 11),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.rouge,
                           side: const BorderSide(color: AppColors.rouge),
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                         ),
                       ),
                     ),
@@ -474,13 +722,21 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: widget.lines.isEmpty ? null : widget.onHold,
-                        icon: const Icon(Icons.pause_circle_outline_rounded, size: 16),
-                        label: const Text('Mettre en attente', style: TextStyle(fontSize: 11)),
+                        icon: const Icon(
+                          Icons.pause_circle_outline_rounded,
+                          size: 16,
+                        ),
+                        label: const Text(
+                          'Mettre en attente',
+                          style: TextStyle(fontSize: 11),
+                        ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.texte,
                           side: const BorderSide(color: AppColors.bord),
                           padding: const EdgeInsets.symmetric(vertical: 10),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                         ),
                       ),
                     ),
@@ -494,13 +750,19 @@ class _LiveTicketPanelState extends State<LiveTicketPanel> {
                     icon: const Icon(Icons.payments_rounded, size: 18),
                     label: const Text(
                       'ENCAISSER (F4)',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.bleu,
+                      backgroundColor: AppColors.orange,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                      ),
                       elevation: 0,
                     ),
                   ),
@@ -544,7 +806,9 @@ class _TicketLineRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isArea = line.unit.toLowerCase().contains('m²') || line.unit.toLowerCase().contains('m2');
+    final isArea =
+        line.unit.toLowerCase().contains('m²') ||
+        line.unit.toLowerCase().contains('m2');
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -556,7 +820,11 @@ class _TicketLineRow extends StatelessWidget {
               children: [
                 Text(
                   line.productName,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.texte),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.texte,
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -577,9 +845,15 @@ class _TicketLineRow extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
-                color: isArea ? AppColors.orange.withOpacity(0.08) : AppColors.fond,
+                color: isArea
+                    ? AppColors.orange.withOpacity(0.08)
+                    : AppColors.fond,
                 borderRadius: BorderRadius.circular(4),
-                border: Border.all(color: isArea ? AppColors.orange.withOpacity(0.5) : AppColors.bord),
+                border: Border.all(
+                  color: isArea
+                      ? AppColors.orange.withOpacity(0.5)
+                      : AppColors.bord,
+                ),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -607,13 +881,21 @@ class _TicketLineRow extends StatelessWidget {
             child: Text(
               '${_fmt(line.lineTotal)} F',
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: AppColors.bleu),
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: AppColors.bleu,
+              ),
             ),
           ),
 
           const SizedBox(width: 4),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 16, color: AppColors.rouge),
+            icon: const Icon(
+              Icons.close_rounded,
+              size: 16,
+              color: AppColors.rouge,
+            ),
             onPressed: onRemove,
             tooltip: 'Supprimer',
             padding: EdgeInsets.zero,
@@ -638,8 +920,18 @@ class _TotalRow extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 11, color: AppColors.gris)),
-          Text(value, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: valueColor ?? AppColors.texte)),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 11, color: AppColors.gris),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: valueColor ?? AppColors.texte,
+            ),
+          ),
         ],
       ),
     );
@@ -653,6 +945,8 @@ class TicketLine {
   final String unit;
   final double unitPrice;
   double quantity;
+  double length;
+  double width;
 
   TicketLine({
     required this.productId,
@@ -660,7 +954,12 @@ class TicketLine {
     required this.unit,
     required this.unitPrice,
     this.quantity = 1.0,
+    this.length = 0,
+    this.width = 0,
   });
+
+  bool get isDimensionLine =>
+      unit.toLowerCase().contains('m²') || unit.toLowerCase().contains('m2');
 
   double get lineTotal => unitPrice * quantity;
 }

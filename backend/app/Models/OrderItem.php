@@ -15,6 +15,9 @@ class OrderItem extends Model
         'designation',
         'unit',
         'quantity',
+        'length',
+        'width',
+        'surface_area',
         'unit_price',
         'tax_rate',
         'discount_amount',
@@ -27,6 +30,9 @@ class OrderItem extends Model
     {
         return [
             'quantity' => 'decimal:2',
+            'length' => 'decimal:2',
+            'width' => 'decimal:2',
+            'surface_area' => 'decimal:2',
             'unit_price' => 'decimal:2',
             'tax_rate' => 'decimal:2',
             'discount_amount' => 'decimal:2',

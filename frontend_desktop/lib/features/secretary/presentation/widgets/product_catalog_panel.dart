@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/product_icon_helper.dart';
 import '../../../../models/product.dart';
@@ -39,11 +40,20 @@ class ProductCatalogPanel extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.grid_view_rounded, size: 16, color: AppColors.bleu),
+                const Icon(
+                  Icons.grid_view_rounded,
+                  size: 16,
+                  color: AppColors.bleu,
+                ),
                 const SizedBox(width: 8),
                 const Text(
                   'CATALOGUE PRESTATIONS',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 0.5, color: AppColors.bleu),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                    color: AppColors.bleu,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -56,11 +66,13 @@ class ProductCatalogPanel extends StatelessWidget {
                           isActive: selectedCategoryId == null,
                           onTap: () => onCategoryChanged(null),
                         ),
-                        ...categories.map((cat) => _CategoryChip(
-                          label: cat.name,
-                          isActive: selectedCategoryId == cat.id,
-                          onTap: () => onCategoryChanged(cat.id),
-                        )),
+                        ...categories.map(
+                          (cat) => _CategoryChip(
+                            label: cat.name,
+                            isActive: selectedCategoryId == cat.id,
+                            onTap: () => onCategoryChanged(cat.id),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -76,7 +88,11 @@ class ProductCatalogPanel extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.inventory_2_outlined, size: 40, color: AppColors.bord),
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          size: 40,
+                          color: AppColors.bord,
+                        ),
                         SizedBox(height: 8),
                         Text(
                           'Aucune prestation dans cette catégorie.',
@@ -88,12 +104,13 @@ class ProductCatalogPanel extends StatelessWidget {
                 : Padding(
                     padding: const EdgeInsets.all(12),
                     child: GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 190,
-                        crossAxisSpacing: 10,
-                        mainAxisSpacing: 10,
-                        childAspectRatio: 1.05,
-                      ),
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
+                            maxCrossAxisExtent: 190,
+                            crossAxisSpacing: 10,
+                            mainAxisSpacing: 10,
+                            childAspectRatio: 1.05,
+                          ),
                       itemCount: products.length,
                       itemBuilder: (context, index) {
                         return _ProductCard(
@@ -115,7 +132,11 @@ class _CategoryChip extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  const _CategoryChip({required this.label, required this.isActive, required this.onTap});
+  const _CategoryChip({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +150,9 @@ class _CategoryChip extends StatelessWidget {
           decoration: BoxDecoration(
             color: isActive ? AppColors.bleu : AppColors.fond,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: isActive ? AppColors.bleu : AppColors.bord),
+            border: Border.all(
+              color: isActive ? AppColors.bleu : AppColors.bord,
+            ),
           ),
           child: Text(
             label,
@@ -160,7 +183,10 @@ class _ProductCardState extends State<_ProductCard> {
 
   @override
   Widget build(BuildContext context) {
-    final icon = ProductIconHelper.getIcon(widget.product.name, widget.product.unit);
+    final icon = ProductIconHelper.getIcon(
+      widget.product.name,
+      widget.product.unit,
+    );
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
@@ -181,7 +207,7 @@ class _ProductCardState extends State<_ProductCard> {
                       color: AppColors.orange.withOpacity(0.12),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ]
                 : null,
           ),
@@ -193,7 +219,8 @@ class _ProductCardState extends State<_ProductCard> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: (_hovered ? AppColors.orange : AppColors.bleu).withOpacity(0.08),
+                  color: (_hovered ? AppColors.orange : AppColors.bleu)
+                      .withOpacity(0.08),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
@@ -208,7 +235,12 @@ class _ProductCardState extends State<_ProductCard> {
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.texte, height: 1.2),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.texte,
+                  height: 1.2,
+                ),
               ),
               const SizedBox(height: 6),
               Container(
@@ -217,9 +249,43 @@ class _ProductCardState extends State<_ProductCard> {
                   color: AppColors.fond,
                   borderRadius: BorderRadius.circular(4),
                 ),
-                child: Text(
-                  '${_formatPrice(widget.product.unitPrice)} F / ${widget.product.unit}',
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: AppColors.orange2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        '${_formatPrice(widget.product.unitPrice)} F / ${widget.product.unit}',
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.orange2,
+                        ),
+                      ),
+                    ),
+                    if (widget.product.allowDimensions) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.orange.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'm²',
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            color: AppColors.orange2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],
