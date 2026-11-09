@@ -1,3 +1,3 @@
-Dernier intervenant : Antigravity (Gemini 3.8 Flash High) | IDE : Antigravity | Dossier : backend
-Dernière intervention : 2026-11-09 10:30 +00:00 | Branche v2-main initialisée (v1 archivée). Refonte complète Backend Laravel 11 MVC modulaire par profil (Admin, Secrétariat style Aronium POS, Comptabilité & Caisse), gestion exercice fiscal 2025-2026, paramétrage entreprise (IFU, logo, pied de page), impression reçus et 13/13 tests validés (100 assertions).
-Reprise : Backend opérationnel, migrations & seeders prêts, 13 tests passent. | Prochaine action : Valider avec l'utilisateur les maquettes/illustrations UX avant de démarrer le frontend.
+Dernier intervenant : Antigravity (Gemini 3.8 Flash) | IDE : Antigravity | Dossier : ANTIGRAVITY
+Dernière intervention : 2026-11-09 11:27 +00:00 | Frontend Flutter Desktop complet implémenté (POS Aronium, Secrétariat, Comptabilité, Admin) selon v.html. 0 erreur statique, tests widgets validés avec succès.
+Reprise : Frontend Flutter Desktop et Backend Laravel 11 opérationnels. | Prochaine action : Commit Git et lancement / démonstration de l'application.

@@ -52,3 +52,4 @@ class DailyRegister extends Model
         return $this->belongsTo(User::class);
     }
 }
+

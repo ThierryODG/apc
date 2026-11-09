@@ -87,3 +87,4 @@ class Order extends Model
         ]);
     }
 }
+

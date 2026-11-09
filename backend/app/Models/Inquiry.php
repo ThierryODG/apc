@@ -50,3 +50,4 @@ class Inquiry extends Model
         return $this->belongsTo(Order::class, 'converted_order_id');
     }
 }
+

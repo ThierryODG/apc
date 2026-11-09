@@ -40,3 +40,4 @@ class CashFlow extends Model
         return $this->belongsTo(User::class);
     }
 }
+

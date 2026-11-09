@@ -33,3 +33,4 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::post('/users', [UserController::class, 'store']);
     Route::patch('/users/{user}/toggle-active', [UserController::class, 'toggleActive']);
 });
+

@@ -23,3 +23,4 @@ class StoreExpenseRequest extends FormRequest
         ];
     }
 }
+

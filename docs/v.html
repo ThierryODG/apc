@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>AFRICAPRINT</title>
+<style>
+:root{
+  --bleu:#0B3C6E;
+  --bleu2:#1E6FD9;
+  --orange:#F5821F;
+  --orange2:#D96A0A;
+  --blanc:#FFFFFF;
+  --fond:#EEF2F7;
+  --texte:#1F2937;
+  --gris:#6B7280;
+  --vert:#16A34A;
+  --rouge:#DC2626;
+  --bord:#E1E6ED;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Segoe UI',system-ui,sans-serif;
+  background:var(--fond);
+  color:var(--texte);
+  font-size:13px;
+  height:100vh;
+  overflow:hidden;
+}
+.app{display:flex;height:100vh}
+
+/* ============ SIDEBAR (style AroNium) ============ */
+.sidebar{
+  width:200px;
+  background:var(--bleu);
+  color:#fff;
+  display:flex;
+  flex-direction:column;
+  flex-shrink:0;
+}
+.brand{
+  padding:18px 16px;
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:.5px;
+  border-bottom:1px solid rgba(255,255,255,.12);
+}
+.brand span{color:var(--orange)}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav a{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:11px 16px;
+  color:#c9d6e5;
+  text-decoration:none;
+  font-size:13px;
+  border-left:3px solid transparent;
+}
+.nav a:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav a.active{
+  background:rgba(245,130,31,.15);
+  color:#fff;
+  border-left-color:var(--orange);
+  font-weight:600;
+}
+.nav a .ico{width:18px;text-align:center;font-size:15px}
+.sidebar-foot{
+  padding:12px 16px;
+  border-top:1px solid rgba(255,255,255,.12);
+  font-size:11px;
+  color:#8fa4bd;
+}
+
+/* ============ MAIN ============ */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+/* ============ TOPBAR ============ */
+.topbar{
+  height:56px;
+  background:var(--blanc);
+  display:flex;
+  align-items:center;
+  gap:14px;
+  padding:0 18px;
+  border-bottom:1px solid var(--bord);
+  flex-shrink:0;
+}
+.search{
+  flex:1;
+  max-width:420px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:var(--fond);
+  border:1px solid var(--bord);
+  border-radius:4px;
+  padding:7px 10px;
+}
+.search input{
+  border:0;background:transparent;outline:none;flex:1;font-size:13px;
+}
+.search .kbd{
+  font-size:10px;background:#fff;border:1px solid var(--bord);
+  border-radius:3px;padding:1px 5px;color:var(--gris);
+}
+.top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.top-icon{
+  width:34px;height:34px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--fond);cursor:pointer;font-size:15px;position:relative;
+}
+.top-icon .dot{
+  position:absolute;top:6px;right:6px;width:7px;height:7px;
+  border-radius:50%;background:var(--orange);
+}
+.user{
+  display:flex;align-items:center;gap:8px;
+  padding:5px 10px 5px 5px;background:var(--fond);
+  border-radius:20px;cursor:pointer;
+}
+.user .av{
+  width:28px;height:28px;border-radius:50%;
+  background:var(--orange);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:700;font-size:11px;
+}
+.user .nm{font-size:12px;font-weight:600}
+
+/* ============ CONTENT ============ */
+.content{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+
+/* ============ TILES D'ACCES RAPIDE (AroNium style) ============ */
+.tiles{
+  display:grid;
+  grid-template-columns:repeat(6,1fr);
+  gap:10px;
+}
+.tile{
+  background:var(--blanc);
+  border:1px solid var(--bord);
+  border-radius:6px;
+  padding:14px 10px;
+  text-align:center;
+  cursor:pointer;
+  transition:.15s;
+  border-top:3px solid var(--bleu2);
+}
+.tile:hover{
+  border-top-color:var(--orange);
+  transform:translateY(-2px);
+  box-shadow:0 4px 12px rgba(0,0,0,.07);
+}
+.tile .ic{
+  font-size:22px;margin-bottom:6px;
+}
+.tile .tt{
+  font-size:11px;font-weight:700;color:var(--bleu);
+  text-transform:uppercase;letter-spacing:.3px;
+}
+.tile.hot{border-top-color:var(--orange)}
+.tile.hot .tt{color:var(--orange2)}
+
+/* ============ VENTE (écran AroNium : grille articles + ticket) ============ */
+.sale{
+  display:grid;
+  grid-template-columns:1fr 340px;
+  gap:14px;
+  flex:1;
+  min-height:0;
+}
+
+/* Grille articles */
+.catalog{
+  background:var(--blanc);
+  border:1px solid var(--bord);
+  border-radius:6px;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
+.cat-head{
+  padding:10px 14px;
+  border-bottom:1px solid var(--bord);
+  display:flex;align-items:center;gap:10px;
+}
+.cat-head h2{
+  font-size:13px;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--bleu);font-weight:700;
+}
+.cat-head .cat-filters{margin-left:auto;display:flex;gap:6px}
+.cat-chip{
+  font-size:11px;padding:4px 10px;border-radius:12px;
+  background:var(--fond);color:var(--gris);cursor:pointer;font-weight:600;
+}
+.cat-chip.on{background:var(--bleu);color:#fff}
+.cat-chip.on.orange{background:var(--orange);color:#fff}
+
+.cat-grid{
+  padding:12px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  overflow-y:auto;
+  align-content:start;
+}
+.product{
+  background:var(--fond);
+  border:1px solid var(--bord);
+  border-radius:6px;
+  padding:12px 8px;
+  text-align:center;
+  cursor:pointer;
+  transition:.12s;
+  position:relative;
+}
+.product:hover{
+  background:#fff;
+  border-color:var(--orange);
+  box-shadow:0 3px 8px rgba(245,130,31,.15);
+}
+.product .pico{font-size:22px;margin-bottom:4px}
+.product .pnm{
+  font-size:12px;font-weight:600;color:var(--texte);
+  line-height:1.2;margin-bottom:4px;min-height:28px;
+}
+.product .ppr{
+  font-size:12px;font-weight:800;color:var(--orange2);
+}
+.product .pstock{
+  font-size:10px;color:var(--gris);margin-top:2px;
+}
+.product .pstock.low{color:var(--rouge);font-weight:700}
+
+/* Ticket à droite (AroNium style) */
+.ticket{
+  background:var(--blanc);
+  border:1px solid var(--bord);
+  border-radius:6px;
+  display:flex;flex-direction:column;
+  min-height:0;
+}
+.ticket-head{
+  padding:12px 14px;
+  border-bottom:1px solid var(--bord);
+  background:var(--bleu);
+  color:#fff;
+  border-radius:6px 6px 0 0;
+  display:flex;justify-content:space-between;align-items:center;
+}
+.ticket-head h3{
+  font-size:12px;text-transform:uppercase;letter-spacing:.4px;
+}
+.ticket-head .tid{
+  font-size:11px;background:rgba(255,255,255,.15);
+  padding:2px 8px;border-radius:3px;font-weight:700;
+}
+
+.ticket-client{
+  padding:10px 14px;
+  border-bottom:1px solid var(--bord);
+  display:flex;align-items:center;gap:8px;
+  font-size:12px;
+}
+.ticket-client .lbl{color:var(--gris);font-weight:600}
+.ticket-client .val{font-weight:700;color:var(--bleu)}
+
+.ticket-items{
+  flex:1;overflow-y:auto;padding:6px 14px;
+}
+.ti{
+  display:grid;
+  grid-template-columns:1fr 32px 60px;
+  gap:6px;
+  padding:8px 0;
+  border-bottom:1px dashed var(--bord);
+  align-items:center;
+  font-size:12px;
+}
+.ti .nm{font-weight:600;color:var(--texte);line-height:1.2}
+.ti .qt{
+  background:var(--fond);text-align:center;
+  border-radius:3px;padding:3px 0;font-weight:700;font-size:11px;
+}
+.ti .pr{text-align:right;font-weight:800;color:var(--orange2)}
+
+.ticket-total{
+  padding:12px 14px;
+  border-top:2px solid var(--bleu);
+  background:var(--fond);
+}
+.tt-row{display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px}
+.tt-row.big{font-size:18px;font-weight:800;color:var(--bleu);margin-top:6px}
+
+.ticket-actions{
+  padding:12px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.btn{
+  border:0;border-radius:5px;padding:11px;font-size:13px;
+  font-weight:700;cursor:pointer;transition:.12s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.btn-primary{background:var(--orange);color:#fff}
+.btn-primary:hover{background:var(--orange2)}
+.btn-blue{background:var(--bleu);color:#fff}
+.btn-blue:hover{background:#0a3259}
+.btn-ghost{background:var(--fond);color:var(--texte);border:1px solid var(--bord)}
+.btn-ghost:hover{background:#e2e8f0}
+.btn-full{grid-column:1/-1}
+
+/* ============ BANDEAU KPI BAS ============ */
+.strip{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.strip .s{
+  background:var(--blanc);
+  border:1px solid var(--bord);
+  border-radius:6px;
+  padding:10px 14px;
+  border-left:3px solid var(--orange);
+  display:flex;flex-direction:column;
+}
+.strip .s.blue{border-left-color:var(--bleu2)}
+.strip .s.red{border-left-color:var(--rouge)}
+.strip .s .l{
+  font-size:10px;text-transform:uppercase;letter-spacing:.4px;
+  color:var(--gris);font-weight:700;
+}
+.strip .s .v{font-size:20px;font-weight:800;color:var(--bleu);margin-top:2px}
+.strip .s .d{font-size:11px;color:var(--vert);font-weight:600;margin-top:1px}
+.strip .s .d.w{color:var(--rouge)}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand">AFRICA<span>PRINT</span></div>
+    <nav class="nav">
+      <a class="active"><span class="ico">🏠</span> Caisse</a>
+      <a><span class="ico">📋</span> Commandes</a>
+      <a><span class="ico">🖨</span> Production</a>
+      <a><span class="ico">📦</span> Stocks</a>
+      <a><span class="ico">🧾</span> Factures</a>
+      <a><span class="ico">👥</span> Clients</a>
+      <a><span class="ico">🚚</span> Livraisons</a>
+      <a><span class="ico">📊</span> Rapports</a>
+      <a><span class="ico">⚙</span> Paramètres</a>
+    </nav>
+    <div class="sidebar-foot">v1.0 — Ouagadougou</div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <div class="search">
+        🔍
+        <input placeholder="Rechercher produit, code-barres, client…">
+        <span class="kbd">F3</span>
+      </div>
+      <div class="top-right">
+        <div class="top-icon">🔔<span class="dot"></span></div>
+        <div class="top-icon">🌙</div>
+        <div class="user">
+          <div class="av">AD</div>
+          <div class="nm">Admin</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- TILES ACCES RAPIDE (AroNium style) -->
+      <section class="tiles">
+        <div class="tile hot"><div class="ic">➕</div><div class="tt">Nouvelle commande</div></div>
+        <div class="tile"><div class="ic">🖨</div><div class="tt">Lancer prod.</div></div>
+        <div class="tile"><div class="ic">🧾</div><div class="tt">Encaisser</div></div>
+        <div class="tile"><div class="ic">📦</div><div class="tt">Entrée stock</div></div>
+        <div class="tile"><div class="ic">👤</div><div class="tt">Nouveau client</div></div>
+        <div class="tile"><div class="ic">📊</div><div class="tt">Rapport jour</div></div>
+      </section>
+
+      <!-- ECRAN VENTE : catalogue + ticket -->
+      <section class="sale">
+
+        <!-- CATALOGUE -->
+        <div class="catalog">
+          <div class="cat-head">
+            <h2>Catalogue produits</h2>
+            <div class="cat-filters">
+              <span class="cat-chip on">Tous</span>
+              <span class="cat-chip">Papeterie</span>
+              <span class="cat-chip">Gadgets</span>
+              <span class="cat-chip">Banderoles</span>
+              <span class="cat-chip on orange">Urgents</span>
+            </div>
+          </div>
+
+          <div class="cat-grid">
+            <div class="product">
+              <div class="pico">📄</div>
+              <div class="pnm">Formulaires A4</div>
+              <div class="ppr">2 400 F</div>
+              <div class="pstock">Stock : 500</div>
+            </div>
+            <div class="product">
+              <div class="pico">📰</div>
+              <div class="pnm">Banderoles 3×1m</div>
+              <div class="ppr">37 500 F</div>
+              <div class="pstock">Stock : 12</div>
+            </div>
+            <div class="product">
+              <div class="pico">☕</div>
+              <div class="pnm">Tasse personnalisée</div>
+              <div class="ppr">1 600 F</div>
+              <div class="pstock low">Stock : 8</div>
+            </div>
+            <div class="product">
+              <div class="pico">💼</div>
+              <div class="pnm">Cartes de visite x100</div>
+              <div class="ppr">18 000 F</div>
+              <div class="pstock">Stock : 45</div>
+            </div>
+            <div class="product">
+              <div class="pico">📒</div>
+              <div class="pnm">Registre 200p</div>
+              <div class="ppr">4 500 F</div>
+              <div class="pstock">Stock : 120</div>
+            </div>
+            <div class="product">
+              <div class="pico">🖊</div>
+              <div class="pnm">Stylo gravé</div>
+              <div class="ppr">650 F</div>
+              <div class="pstock">Stock : 340</div>
+            </div>
+            <div class="product">
+              <div class="pico">✉️</div>
+              <div class="pnm">Enveloppes x50</div>
+              <div class="ppr">3 200 F</div>
+              <div class="pstock">Stock : 80</div>
+            </div>
+            <div class="product">
+              <div class="pico">📅</div>
+              <div class="pnm">Calendrier mural</div>
+              <div class="ppr">5 000 F</div>
+              <div class="pstock">Stock : 60</div>
+            </div>
+            <div class="product">
+              <div class="pico">🪧</div>
+              <div class="pnm">Panneau PVC</div>
+              <div class="ppr">25 000 F</div>
+              <div class="pstock">Stock : 6</div>
+            </div>
+            <div class="product">
+              <div class="pico">🏷</div>
+              <div class="pnm">Étiquettes x100</div>
+              <div class="ppr">2 800 F</div>
+              <div class="pstock">Stock : 95</div>
+            </div>
+            <div class="product">
+              <div class="pico">📘</div>
+              <div class="pnm">Brochure A5</div>
+              <div class="ppr">7 500 F</div>
+              <div class="pstock">Stock : 30</div>
+            </div>
+            <div class="product">
+              <div class="pico">🖼</div>
+              <div class="pnm">Affiche A2</div>
+              <div class="ppr">9 000 F</div>
+              <div class="pstock">Stock : 22</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TICKET (AroNium style) -->
+        <div class="ticket">
+          <div class="ticket-head">
+            <h3>Ticket en cours</h3>
+            <span class="tid">#T-1045</span>
+          </div>
+
+          <div class="ticket-client">
+            <span class="lbl">Client :</span>
+            <span class="val">ONG Espoir</span>
+            <span style="margin-left:auto;color:var(--gris);font-size:11px;">Changer ▾</span>
+          </div>
+
+          <div class="ticket-items">
+            <div class="ti">
+              <div class="nm">Banderoles 3×1m</div>
+              <div class="qt">2</div>
+              <div class="pr">75 000</div>
+            </div>
+            <div class="ti">
+              <div class="nm">Cartes de visite x100</div>
+              <div class="qt">1</div>
+              <div class="pr">18 000</div>
+            </div>
+            <div class="ti">
+              <div class="nm">Tasse personnalisée</div>
+              <div class="qt">10</div>
+              <div class="pr">16 000</div>
+            </div>
+            <div class="ti">
+              <div class="nm">Formulaires A4</div>
+              <div class="qt">100</div>
+              <div class="pr">240 000</div>
+            </div>
+          </div>
+
+          <div class="ticket-total">
+            <div class="tt-row"><span>Sous-total</span><span>349 000 F</span></div>
+            <div class="tt-row"><span>Remise</span><span style="color:var(--rouge)">- 0 F</span></div>
+            <div class="tt-row"><span>TVA (18%)</span><span>62 820 F</span></div>
+            <div class="tt-row big"><span>TOTAL</span><span>411 820 F</span></div>
+          </div>
+
+          <div class="ticket-actions">
+            <button class="btn btn-ghost">🗑 Annuler</button>
+            <button class="btn btn-ghost">⏸ Attente</button>
+            <button class="btn btn-blue btn-full">💳 Encaisser (F4)</button>
+            <button class="btn btn-primary btn-full">🖨 Valider & lancer prod.</button>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- BANDEAU KPI BAS -->
+      <section class="strip">
+        <div class="s">
+          <div class="l">Ventes du jour</div>
+          <div class="v">12 tickets</div>
+          <div class="d">▲ +3 vs hier</div>
+        </div>
+        <div class="s blue">
+          <div class="l">CA du jour</div>
+          <div class="v">1,8 M F</div>
+          <div class="d">▲ +12 %</div>
+        </div>
+        <div class="s blue">
+          <div class="l">En production</div>
+          <div class="v">7</div>
+          <div class="d w">⏱ 5 en attente</div>
+        </div>
+        <div class="s red">
+          <div class="l">Créances &gt;30j</div>
+          <div class="v">850 K F</div>
+          <div class="d w">⚠ 4 clients</div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

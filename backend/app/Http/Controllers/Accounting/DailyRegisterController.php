@@ -153,3 +153,4 @@ class DailyRegisterController extends Controller
         ]);
     }
 }
+

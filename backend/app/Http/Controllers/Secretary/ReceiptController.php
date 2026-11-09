@@ -23,3 +23,4 @@ class ReceiptController extends Controller
         ]);
     }
 }
+

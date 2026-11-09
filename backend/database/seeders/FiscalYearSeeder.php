@@ -22,3 +22,4 @@ class FiscalYearSeeder extends Seeder
         );
     }
 }
+

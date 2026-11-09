@@ -59,3 +59,4 @@ class FiscalYear extends Model
         return $this->hasMany(DailyRegister::class);
     }
 }
+

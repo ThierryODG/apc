@@ -62,3 +62,4 @@ class AuthTest extends TestCase
             ->assertJsonPath('company.name', 'Africa Print Communication');
     }
 }
+

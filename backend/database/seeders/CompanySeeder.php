@@ -29,3 +29,4 @@ class CompanySeeder extends Seeder
         );
     }
 }
+

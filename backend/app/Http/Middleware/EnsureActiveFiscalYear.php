@@ -35,3 +35,4 @@ class EnsureActiveFiscalYear
         return $next($request);
     }
 }
+

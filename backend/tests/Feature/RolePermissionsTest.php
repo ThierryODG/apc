@@ -56,3 +56,4 @@ class RolePermissionsTest extends TestCase
         $this->actingAs($this->admin)->getJson('/api/accounting/dashboard')->assertStatus(200);
     }
 }
+

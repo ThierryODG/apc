@@ -35,3 +35,4 @@ Route::middleware(['auth:sanctum', 'role:accounting,admin', 'fiscal.active'])->g
     Route::post('/daily-register/open', [DailyRegisterController::class, 'open']);
     Route::post('/daily-register/close', [DailyRegisterController::class, 'close']);
 });
+

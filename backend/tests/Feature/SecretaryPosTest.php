@@ -124,3 +124,4 @@ class SecretaryPosTest extends TestCase
             ]);
     }
 }
+

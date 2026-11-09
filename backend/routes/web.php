@@ -9,3 +9,4 @@ Route::get('/', function () {
         'version' => '2.0',
     ]);
 });
+

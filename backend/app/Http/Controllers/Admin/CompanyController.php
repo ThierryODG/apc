@@ -50,3 +50,4 @@ class CompanyController extends Controller
         ]);
     }
 }
+

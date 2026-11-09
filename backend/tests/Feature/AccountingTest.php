@@ -94,3 +94,4 @@ class AccountingTest extends TestCase
             ->assertJsonPath('z_report.discrepancy', '0.00');
     }
 }
+

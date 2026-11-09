@@ -23,3 +23,4 @@ class StoreCashFlowRequest extends FormRequest
         ];
     }
 }
+

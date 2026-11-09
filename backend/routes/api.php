@@ -23,3 +23,4 @@ Route::prefix('secretary')->group(base_path('routes/secretary.php'));
 
 // Module Comptabilité & Trésorerie
 Route::prefix('accounting')->group(base_path('routes/accounting.php'));
+

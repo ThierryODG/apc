@@ -43,3 +43,4 @@ Route::middleware(['auth:sanctum', 'role:secretary,admin', 'fiscal.active'])->gr
     Route::post('/inquiries', [InquiryController::class, 'store']);
     Route::post('/inquiries/{inquiry}/convert', [InquiryController::class, 'convertToOrder']);
 });
+

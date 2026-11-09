@@ -96,3 +96,4 @@ class InquiryController extends Controller
         ]);
     }
 }
+

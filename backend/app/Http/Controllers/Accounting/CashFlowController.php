@@ -62,3 +62,4 @@ class CashFlowController extends Controller
         ], 201);
     }
 }
+

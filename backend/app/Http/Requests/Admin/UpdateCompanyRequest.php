@@ -30,3 +30,4 @@ class UpdateCompanyRequest extends FormRequest
         ];
     }
 }
+
